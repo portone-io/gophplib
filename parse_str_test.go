@@ -75,6 +75,7 @@ func ExampleParseStr_cornerCases() {
 	// input without key name will be ignored
 	fmt.Println("empty input:", ParseStr(""))
 	fmt.Println("no name:    ", ParseStr("=123&[]=123&[foo]=123&[3][var]=123"))
+	fmt.Println("no value:   ", ParseStr("foo&arr[]&arr[]&arr[]=val"))
 	fmt.Println()
 
 	// ParseStr will automatically urldecode the input
@@ -95,6 +96,7 @@ func ExampleParseStr_cornerCases() {
 	// Output:
 	// empty input: map[]
 	// no name:     map[]
+	// no value:    map[foo: arr:[  val]]
 	//
 	// encoded data: map[a:<== yolo swag ==> b:###Yolo Swag###]
 	// backslash:    map[sum:8\2=4]
@@ -118,7 +120,7 @@ func ExampleParseStr_cornerCases() {
 //   - https://github.com/php/php-src/blob/php-8.3.0/ext/standard/tests/strings/parse_str_basic4.phpt
 //   - https://github.com/php/php-src/blob/php-8.3.0/ext/standard/tests/strings/parse_str_memory_error.phpt
 //   - https://github.com/php/php-src/blob/php-8.3.0/ext/standard/tests/strings/bug77439.phpt
-//   - https://github.com/simnalamburt/snippets/blob/3f095f671ca7277a9dabfe60e16fb749effb2e7c/php/parse_str.php
+//   - https://github.com/simnalamburt/snippets/blob/59843441/php/parse_str.php
 func TestParseStr(t *testing.T) {
 	type dict map[any]any
 
@@ -347,6 +349,11 @@ func TestParseStr(t *testing.T) {
 			name:     "NoName",
 			input:    "=123&[]=123&[foo]=123&[3][var]=123",
 			expected: dict{},
+		},
+		{
+			name:     "NoValue",
+			input:    "foo&arr[]&arr[]&arr[]=val",
+			expected: dict{"foo": "", "arr": dict{0: "", 1: "", 2: "val"}},
 		},
 	}
 
