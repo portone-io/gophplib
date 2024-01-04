@@ -120,7 +120,7 @@ func ExampleParseStr_cornerCases() {
 //   - https://github.com/php/php-src/blob/php-8.3.0/ext/standard/tests/strings/bug77439.phpt
 //   - https://github.com/simnalamburt/snippets/blob/3f095f671ca7277a9dabfe60e16fb749effb2e7c/php/parse_str.php
 func TestParseStr(t *testing.T) {
-	type dict map[interface{}]interface{}
+	type dict map[any]any
 
 	testCases := []struct {
 		name     string

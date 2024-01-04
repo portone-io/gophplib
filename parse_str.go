@@ -16,9 +16,9 @@ package gophplib
 //   - https://github.com/php/php-src/blob/php-8.3.0/ext/standard/tests/strings/bug77439.phpt
 //
 // [official PHP documentation]: https://www.php.net/manual/en/function.parse-str.php
-func ParseStr(input string) map[interface{}]interface{} {
+func ParseStr(input string) map[any]any {
 	// TODO: Implementation
-	return map[interface{}]interface{}{
+	return map[any]any{
 		"key": "value",
 		"foo": "bar",
 	}
