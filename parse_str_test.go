@@ -361,7 +361,9 @@ func TestParseStr(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := ParseStr(tc.input)
 			if !reflect.DeepEqual(result, tc.expected) {
-				t.Errorf("%s: expected %v, got %v", tc.name, tc.expected, result)
+				t.Errorf(`
+expected  %#v
+actual    %#v`, tc.expected, result)
 			}
 		})
 	}
