@@ -73,16 +73,6 @@ func registerVariableSafe(key, value string, track *phpArray) {
 		}
 	}
 
-	// Discard variable if mangling made it start with __Host-, where pre-mangling it did not start with __Host-
-	if bytes.HasPrefix(key_new, []byte("__Host-")) && !strings.HasPrefix(key, "__Host-") {
-		return
-	}
-
-	// Discard variable if mangling made it start with __Secure-, where pre-mangling it did not start with __Secure-
-	if bytes.HasPrefix(key_new, []byte("__Secure-")) && !strings.HasPrefix(key, "__Secure-") {
-		return
-	}
-
 	// empty variable name, or variable name with a space in it
 	if len(key_new) == 0 {
 		return
@@ -106,12 +96,6 @@ func registerVariableSafe(key, value string, track *phpArray) {
 				if ret == -1 {
 					// not an index; un-terminate the var name
 					index_slice[idx_s-1] = '_'
-					// PHP variables cannot contain ' ', '.', '[' in their names, so we replace the characters with a '_'
-					for i := idx_s; i < len(index_slice); i++ {
-						if index_slice[i] == ' ' || index_slice[i] == '.' || index_slice[i] == '[' {
-							index_slice[i] = '_'
-						}
-					}
 
 					// NOTE: index 와 index_slice[idx_s - 1:] 가 이어붙어지는
 					// 현상은 idx_s == 1 일 때만 발생한다.
