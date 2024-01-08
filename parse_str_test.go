@@ -355,6 +355,16 @@ func TestParseStr(t *testing.T) {
 			input:    "foo&arr[]&arr[]&arr[]=val",
 			expected: dict{"foo": "", "arr": dict{0: "", 1: "", 2: "val"}},
 		},
+		{
+			name:     "ReadingZero",
+			input:    "foo[03]=yo",
+			expected: dict{"foo": dict{"03": "yo"}},
+		},
+		{
+			name:     "Negative",
+			input:    "foo[-3]=yo",
+			expected: dict{"foo": dict{-3: "yo"}},
+		},
 	}
 
 	for _, tc := range testCases {
