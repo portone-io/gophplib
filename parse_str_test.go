@@ -28,7 +28,7 @@ func ExampleParseStr() {
 	// Output:
 	// map[foo:bar key:value]
 	// map[arr:map[0:A 1:B 2:C]]
-	// map[arr:map[0:A 1:B 2:C] another:map[0:A 1:B]
+	// map[another:map[0:A 1:B] arr:map[0:A 1:B 2:C]]
 	// map[dict:map[foo:bar key:value]]
 	// map[dict:map[k1:map[k2:v1 k3:v2]]]
 	// map[firstname:Conan surname:O'Brien]
@@ -57,8 +57,8 @@ func ExampleParseStr_complexArray() {
 	fmt.Println("2-dim dict:          ", ParseStr("arr[one][four]=deedee&arr[three][six]=wiz"))
 	fmt.Println("3-dim arr:           ", ParseStr("arr[1][2][3]=deedee&arr[1][2][6]=wiz"))
 	// Output:
-	// map[key:value a:map[0:123 1:false 2:last] b:map[0:str] c:map:[0:3.5]]
-	// map[arr:map[0:A 1:B 9:C 10:D foo:E 11:F 1.51:G 12:H]]
+	// map[a:map[0:123 1:false 2:last] b:map[0:str] c:map[0:3.5] key:value]
+	// map[arr:map[0:A 1:B 9:C 10:D 11:F 12:H 15.1:G foo:E]]
 	//
 	// 2-dim array:          map[arr:map[3:map[4:deedee 6:wiz]]]
 	// 2-dim with empty key: map[arr:map[0:map[0:deedee] 1:map[0:wiz]]]
@@ -85,7 +85,6 @@ func ExampleParseStr_cornerCases() {
 	// Ill-formed urlencoded data will be ignored and remain unescaped
 	fmt.Println("ill encoding:", ParseStr("first=%41&second=%a&third=%ZZ"))
 	// Null bytes will be parsed as "%0"
-	fmt.Println("null:        ", ParseStr("str=string%20with%20%00%00%00%20nulls"))
 	fmt.Println()
 
 	// Some characters will be replaced with underscore
@@ -96,18 +95,24 @@ func ExampleParseStr_cornerCases() {
 	// Output:
 	// empty input: map[]
 	// no name:     map[]
-	// no value:    map[foo: arr:[  val]]
+	// no value:    map[arr:map[0: 1: 2:val] foo:]
 	//
-	// encoded data: map[a:<== yolo swag ==> b:###Yolo Swag###]
+	// encoded data: map[a:<==  yolo swag  ==> b:###Yolo Swag###]
 	// backslash:    map[sum:8\2=4]
 	// quotes:       map[str:"quoted" string]
 	// ill encoding: map[first:A second:%a third:%ZZ]
-	// null:         map[str:string with  nulls]
 	//
 	// non-binary safe name: map[arr_test:map[1:deedee 4:map[two:wiz]]]
-	// complex string:       map[first:value arr:[foo bar baz] foo:map[bar:foobar] test_field:testing]
-	// ill formed input:     map[yo;lo: foo__: bar%ZZ yolo___: swag]
-	// ill formed key:       map[arr_1:sid arr:map[4:wiz]]
+	// complex string:       map[arr:map[0:foo bar 1:baz] first:value foo:map[bar:foobar] test_field:testing]
+	// ill formed input:     map[foo_: bar%ZZ yo;lo: yolo___:   swag]
+	// ill formed key:       map[arr:map[4:wiz] arr_1:deedee]
+}
+
+func ExampleParseStr_version() {
+	// parse_str("foo[ 3=v") returns ["foo_ 3" => "v"] in PHP 5.6 and
+	// ["foo__3" => "v"] in PHP 8.3. We follows 5.6 behavior for compatibility.
+	fmt.Println(ParseStr("foo[ 3=v"))
+	// Output: map[foo_ 3:v]
 }
 
 // Test cases for ParseStr. These tests were created using the following test
@@ -259,6 +264,13 @@ func TestParseStr(t *testing.T) {
 			},
 		},
 		{
+			name:  "BadlyFormedStrings0",
+			input: "arr[1=deedee",
+			expected: dict{
+				"arr_1": "deedee",
+			},
+		},
+		{
 			name:  "BadlyFormedStrings1",
 			input: "arr[1=deedee&arr[3][2=wiz",
 			expected: dict{
@@ -387,3 +399,32 @@ actual    %#v`, tc.expected, result)
 //		ParseStr("key=value&foo=bar")
 //	}
 //}
+
+func TestZendHandleNumericStr(t *testing.T) {
+	cases := []struct {
+		string
+		any
+	}{
+		{"", ""},
+		{"0", 0},
+		{"00", "00"},
+		{"-0", "-0"},
+		{"+0", "+0"},
+		{"3", 3},
+		{"03", "03"},
+		{"-3", -3},
+		{"+3", "+3"},
+		{"3.14", "3.14"},
+		{"314", 314},
+		{"9999999999999999999999999999999", "9999999999999999999999999999999"},
+		{"arr", "arr"},
+	}
+
+	for _, c := range cases {
+		t.Run(c.string, func(t *testing.T) {
+			if result := zendHandleNumericStr([]byte(c.string)); result != c.any {
+				t.Errorf("expected %v, got %v", c.any, result)
+			}
+		})
+	}
+}
