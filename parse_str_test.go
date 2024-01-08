@@ -102,7 +102,7 @@ func ExampleParseStr_cornerCases() {
 	// backslash:    map[sum:8\2=4]
 	// quotes:       map[str:"quoted" string]
 	// ill encoding: map[first:A second:%a third:%ZZ]
-	// null:         map[str:string with %0%0%0 nulls]
+	// null:         map[str:string with  nulls]
 	//
 	// non-binary safe name: map[arr_test:map[1:deedee 4:map[two:wiz]]]
 	// complex string:       map[first:value arr:[foo bar baz] foo:map[bar:foobar] test_field:testing]
@@ -182,7 +182,7 @@ func TestParseStr(t *testing.T) {
 			name:  "StringWithNulls",
 			input: "str=string%20with%20%00%00%00%20nulls",
 			expected: dict{
-				"str": "string with %0%0%0 nulls",
+				"str": "string with \x00\x00\x00 nulls",
 			},
 		},
 		{
