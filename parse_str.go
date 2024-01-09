@@ -97,8 +97,8 @@ func registerVariableSafe(key, value string, track *phpArray) {
 					// not an index; un-terminate the var name
 					index_slice[idx_s-1] = '_'
 
-					// NOTE: index 와 index_slice[idx_s - 1:] 가 이어붙어지는
-					// 현상은 idx_s == 1 일 때만 발생한다.
+					// NOTE: concat of `index` and `index_slice[idx_s-1:]` only
+					// occurs when idx_s == 1.
 					if index != nil && idx_s == 1 {
 						index = append(index, index_slice...)
 					}
