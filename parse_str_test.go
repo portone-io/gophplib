@@ -377,6 +377,11 @@ func TestParseStr(t *testing.T) {
 			input:    "foo[-3]=yo",
 			expected: dict{"foo": dict{-3: "yo"}},
 		},
+		{
+			name:     "LeadingWhitespaces",
+			input:    "   foo=bar",
+			expected: dict{"foo": "bar"},
+		},
 	}
 
 	for _, tc := range testCases {

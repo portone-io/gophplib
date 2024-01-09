@@ -54,7 +54,7 @@ func registerVariableSafe(key, value string, track *phpArray) {
 	// PHPAPI void php_register_variable_ex(const char *var_name, zval *val, zval *track_vars_array)
 
 	// ignore leading spaces in the variable name
-	strings.TrimLeft(key, " ")
+	key = strings.TrimLeft(key, " ")
 
 	// Prepare variable name
 	// NOTE: key_new is "var" and "var_orig" in the original PHP codes.
