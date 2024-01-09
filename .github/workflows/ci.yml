@@ -15,3 +15,7 @@ jobs:
           fi
           go build
           go test
+          go vet
+      - uses: dominikh/staticcheck-action@v1
+        with:
+          version: 2023.1.6
