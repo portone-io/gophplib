@@ -396,8 +396,6 @@ actual    %#v`, tc.expected, result)
 	}
 }
 
-// TODO: fuzzing
-
 // Microbenchmark for ParseStr. Command:
 //
 //	go test -run '^$' -bench '^BenchmarkParseStr$' -benchmem \

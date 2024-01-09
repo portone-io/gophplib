@@ -44,8 +44,6 @@ func ParseStr(input string) map[any]any {
 // Reference:
 //   - https://github.com/php/php-src/blob/php-5.6.40/main/php_variables.c#L59-L233
 //   - https://github.com/php/php-src/blob/php-8.3.0/main/php_variables.c#L90-L314
-//
-// TODO: Add tests
 func registerVariableSafe(key, value string, track *phpSymtable) {
 	// NOTE: key is "var_name", value is "val", track is "track_vars_array" in
 	// below PHP verion's function signature.
@@ -171,8 +169,6 @@ func newPhpArray() *phpSymtable {
 
 // It returns a map[any]any whose keys are either string or int, and whose
 // values (RetVal) are either string or "map[string | int]RetVal".
-//
-// TODO: Add tests
 func (p *phpSymtable) intoMap() map[any]any {
 	ret := make(map[any]any)
 	for k, v := range p.d {
@@ -185,14 +181,12 @@ func (p *phpSymtable) intoMap() map[any]any {
 	return ret
 }
 
-// TODO: Add tests
 func (p *phpSymtable) get(key []byte) (any, bool) {
 	k := phpNumericOrString(key)
 	v, ok := p.d[k]
 	return v, ok
 }
 
-// TODO: Add tests
 func (p *phpSymtable) set(key []byte, value any) {
 	k := phpNumericOrString(key)
 	if numeric, ok := k.(int); ok {
@@ -201,13 +195,11 @@ func (p *phpSymtable) set(key []byte, value any) {
 	p.d[k] = value
 }
 
-// TODO: Add tests
 func (p *phpSymtable) setNext(value any) {
 	p.d[p.next] = value
 	p.next++
 }
 
-// TODO: Add tests
 func maxInt(a, b int) int {
 	if a > b {
 		return a
@@ -275,8 +267,6 @@ func zendHandleNumericStr(s string) bool {
 //
 // References:
 //   - https://en.cppreference.com/w/c/string/byte/isspace
-//
-// TODO: Add tests
 func isAsciiWhitespace(c byte) bool {
 	return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v'
 }
