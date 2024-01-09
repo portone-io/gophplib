@@ -398,12 +398,15 @@ actual    %#v`, tc.expected, result)
 
 // TODO: fuzzing
 
-// TODO: Add some benchmark
-//func BenchmarkParseStr(b *testing.B) {
-//	for i := 0; i < b.N; i++ {
-//		ParseStr("key=value&foo=bar")
-//	}
-//}
+// Microbenchmark for ParseStr. Command:
+//
+//	go test -run '^$' -bench '^BenchmarkParseStr$' -benchmem \
+//	  -benchtime 3s -count 5 -memprofile=mem.pprof -cpuprofile=cpu.pprof
+func BenchmarkParseStr(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		ParseStr("2=222&3.14=3.14&arr[123]=asdf&arr[3.14]=asdf&yo;lo&foo = bar%ZZ&yolo + = + swag&A=value&arr[]=foo+bar&arr[]=baz&foo[bar]=foobar&test.field=testing&arr.test[1]=deedee&arr test[4][b]=wiz")
+	}
+}
 
 func TestZendHandleNumericStr(t *testing.T) {
 	cases := []struct {

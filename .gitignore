@@ -1,2 +1,6 @@
 # Result of `go tool cover`
 *.cover.out
+
+# Microbenchmark & profiling result
+/*.pprof
+/gophplib.test
