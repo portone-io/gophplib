@@ -2,7 +2,6 @@ package gophplib
 
 import (
 	"bytes"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -188,14 +187,14 @@ func (p *phpArray) intoMap() map[any]any {
 
 // TODO: Add tests
 func (p *phpArray) get(key []byte) (any, bool) {
-	k := zendHandleNumericStr(key)
+	k := phpNumericOrString(key)
 	v, ok := p.d[k]
 	return v, ok
 }
 
 // TODO: Add tests
 func (p *phpArray) set(key []byte, value any) {
-	k := zendHandleNumericStr(key)
+	k := phpNumericOrString(key)
 	if numeric, ok := k.(int); ok {
 		p.next = maxInt(p.next, numeric+1)
 	}
@@ -216,15 +215,9 @@ func maxInt(a, b int) int {
 	return b
 }
 
-// References:
-//   - https://github.com/php/php-src/blob/php-8.3.0/Zend/zend_hash.h#L388-L404
-//   - https://github.com/php/php-src/blob/php-8.3.0/Zend/zend_hash.c#L3262-L3299
-//
-// TODO: Add tests
-func zendHandleNumericStr(input []byte) any {
+func phpNumericOrString(input []byte) any {
 	str := string(input)
-	// Test if input is numeric string without leading zeros or a plus sign
-	if !regexp.MustCompile(`^-?[1-9][0-9]*$|^0$`).MatchString(str) {
+	if !zendHandleNumericStr(str) {
 		return str
 	}
 	num, err := strconv.Atoi(str)
@@ -233,6 +226,49 @@ func zendHandleNumericStr(input []byte) any {
 		return str
 	}
 	return num
+}
+
+// zendHandleNumericStr is a ported function that works exactly the same as
+// PHP's _zend_handle_numeric_str function.
+//
+// It returns true if the input string meets all of the following conditions:
+//   - It is an signed integer string without leading zeros. (positive sign is
+//     not allowed, only negative sign is allowed)
+//   - It is not a negative zero.
+//
+// It behaves same with regexp.MustCompile(`^-?[1-9][0-9]*$|^0$`).MatchString
+//
+// References:
+//   - https://github.com/php/php-src/blob/php-8.3.0/Zend/zend_hash.h#L388-L404
+//   - https://github.com/php/php-src/blob/php-8.3.0/Zend/zend_hash.c#L3262-L3299
+func zendHandleNumericStr(s string) bool {
+	// Handle few cases first to make further checks simpler
+	switch s {
+	case "0":
+		return true
+	case "", "-":
+		return false
+	}
+
+	// Check for negative sign
+	begin := 0
+	if s[0] == '-' {
+		begin = 1
+	}
+
+	// Ensure the first character isn't '0'
+	if s[begin] == '0' {
+		return false
+	}
+
+	// Check that all characters are digits
+	for _, ch := range s[begin:] {
+		if ch < '0' || ch > '9' {
+			return false
+		}
+	}
+
+	return true
 }
 
 // isAsciiSpace is an ASCII-only version of C's isspace.

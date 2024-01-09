@@ -408,7 +408,7 @@ func BenchmarkParseStr(b *testing.B) {
 	}
 }
 
-func TestZendHandleNumericStr(t *testing.T) {
+func TestPhpNumericOrString(t *testing.T) {
 	cases := []struct {
 		string
 		any
@@ -430,7 +430,7 @@ func TestZendHandleNumericStr(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.string, func(t *testing.T) {
-			if result := zendHandleNumericStr([]byte(c.string)); result != c.any {
+			if result := phpNumericOrString([]byte(c.string)); result != c.any {
 				t.Errorf("expected %v, got %v", c.any, result)
 			}
 		})
