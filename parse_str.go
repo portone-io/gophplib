@@ -46,7 +46,7 @@ func ParseStr(input string) map[any]any {
 //   - https://github.com/php/php-src/blob/php-8.3.0/main/php_variables.c#L90-L314
 //
 // TODO: Add tests
-func registerVariableSafe(key, value string, track *phpArray) {
+func registerVariableSafe(key, value string, track *phpSymtable) {
 	// NOTE: key is "var_name", value is "val", track is "track_vars_array" in
 	// below PHP verion's function signature.
 	//
@@ -85,7 +85,7 @@ func registerVariableSafe(key, value string, track *phpArray) {
 		for {
 			idx++
 			idx_s := idx // idx_next is "index_s" in the original PHP codes.
-			if isAsciiSpace(index_slice[idx]) {
+			if isAsciiWhitespace(index_slice[idx]) {
 				idx++
 			}
 			if index_slice[idx] == ']' {
@@ -107,7 +107,7 @@ func registerVariableSafe(key, value string, track *phpArray) {
 				idx += ret
 			}
 
-			var subdict *phpArray
+			var subdict *phpSymtable
 			if index == nil {
 				subdict = newPhpArray()
 				track.setNext(subdict)
@@ -120,7 +120,7 @@ func registerVariableSafe(key, value string, track *phpArray) {
 					// References for origianl PHP codes of here:
 					//   - https://www.phpinternalsbook.com/php7/zvals/memory_management.html
 					//   - https://www.phpinternalsbook.com/php7/zvals/basic_structure.html
-					underlying, ok := value.(*phpArray)
+					underlying, ok := value.(*phpSymtable)
 					if !ok {
 						subdict = newPhpArray()
 						track.set(index, subdict)
@@ -152,18 +152,18 @@ plain_var:
 	}
 }
 
-// phpArray is a map[any]any which behaves like PHP's array. It maintains
+// phpSymtable is a map[any]any which behaves like PHP's array. It maintains
 // internal next (i.e. nNextFreeElement of PHP) state and it automatically
 // converts numeric string keys to integer keys.
-type phpArray struct {
+type phpSymtable struct {
 	next int
 	// Key is either string or int.
-	// Value is either string or *phpArray.
+	// Value is either string or *phpSymtable.
 	d map[any]any
 }
 
-func newPhpArray() *phpArray {
-	return &phpArray{
+func newPhpArray() *phpSymtable {
+	return &phpSymtable{
 		next: 0,
 		d:    make(map[any]any),
 	}
@@ -173,10 +173,10 @@ func newPhpArray() *phpArray {
 // values (RetVal) are either string or "map[string | int]RetVal".
 //
 // TODO: Add tests
-func (p *phpArray) intoMap() map[any]any {
+func (p *phpSymtable) intoMap() map[any]any {
 	ret := make(map[any]any)
 	for k, v := range p.d {
-		if sub, ok := v.(*phpArray); ok {
+		if sub, ok := v.(*phpSymtable); ok {
 			ret[k] = sub.intoMap()
 		} else {
 			ret[k] = v
@@ -186,14 +186,14 @@ func (p *phpArray) intoMap() map[any]any {
 }
 
 // TODO: Add tests
-func (p *phpArray) get(key []byte) (any, bool) {
+func (p *phpSymtable) get(key []byte) (any, bool) {
 	k := phpNumericOrString(key)
 	v, ok := p.d[k]
 	return v, ok
 }
 
 // TODO: Add tests
-func (p *phpArray) set(key []byte, value any) {
+func (p *phpSymtable) set(key []byte, value any) {
 	k := phpNumericOrString(key)
 	if numeric, ok := k.(int); ok {
 		p.next = maxInt(p.next, numeric+1)
@@ -202,7 +202,7 @@ func (p *phpArray) set(key []byte, value any) {
 }
 
 // TODO: Add tests
-func (p *phpArray) setNext(value any) {
+func (p *phpSymtable) setNext(value any) {
 	p.d[p.next] = value
 	p.next++
 }
@@ -271,12 +271,12 @@ func zendHandleNumericStr(s string) bool {
 	return true
 }
 
-// isAsciiSpace is an ASCII-only version of C's isspace.
+// isAsciiWhitespace is an ASCII-only version of C's isspace.
 //
 // References:
 //   - https://en.cppreference.com/w/c/string/byte/isspace
 //
 // TODO: Add tests
-func isAsciiSpace(c byte) bool {
+func isAsciiWhitespace(c byte) bool {
 	return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v'
 }
