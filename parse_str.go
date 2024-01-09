@@ -83,7 +83,7 @@ func registerVariableSafe(key, value string, track *phpArray) {
 	if is_array {
 		// We do not perform max nesting level check here
 		idx := 0 // idx is offset of "ip" pointer in the original PHP codes.
-		for true {
+		for {
 			idx++
 			idx_s := idx // idx_next is "index_s" in the original PHP codes.
 			if isAsciiSpace(index_slice[idx]) {
