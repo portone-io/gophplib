@@ -48,8 +48,8 @@ func isxdigit(c byte) bool {
 }
 
 // htoi is a ported function that works exactly the same as PHP's php_htoi
-// function. It returns the rune value of the hexadecimal number represented by
-// the two runes hi and lo.
+// function. It returns the byte value of the hexadecimal number represented by
+// the two bytes hi and lo.
 //
 // It expects both hi and lo to be valid hexadecimal digits. (ex: '0'-'9',
 // 'a'-'f', 'A'-'F') Otherwise, the result is undefined.
