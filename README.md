@@ -1,6 +1,6 @@
 gophplib
 ========
-gophplib is a collection of PHP functions implemented in Go. We aim to achieve
+gophplib is a collection of PHP 5.6 functions implemented in Go. We aim to achieve
 100% byte-to-byte bug-to-bug behavioral equivalence with the original PHP
 functions.
 
