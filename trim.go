@@ -5,10 +5,6 @@ import (
 	"strings"
 )
 
-type toStringAble interface {
-	toString() string
-}
-
 // Trim is a ported function that works exactly the same as PHP 5.6's trim
 // function. For more information, see the [official PHP documentation].
 //
