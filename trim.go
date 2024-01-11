@@ -19,9 +19,8 @@ type toStringAble interface {
 // function from the package strings. For more detailed information about the
 // trim function in the package strings, see the [strings's trim documentation]
 //
-// NOTE: Implementation of second parameter of Trim is not complete yet. This
-// function does not support specifying a set of characters using string ranges
-// (e.g., "a..z") in the chars parameter.
+// NOTE: This function does not support the second parameter of original parse_str yet.
+// It only strips the default characters (" \n\r\t\v\x00")
 //
 // References:
 //   - https://www.php.net/manual/en/function.trim.php
@@ -38,22 +37,8 @@ type toStringAble interface {
 //
 // [official PHP documentation]: https://www.php.net/manual/en/function.trim.php
 // [strings's trim documentation]: https://pkg.go.dev/strings#Trim
-func Trim(value any, chars ...any) any {
-	var charSet string
-
-	// If the `chars` is not provided or is an empty string, set the default character set
-	if len(chars) == 0 {
-		charSet = " \n\r\t\v\x00"
-	} else {
-		// If `chars` is a string, use it as the character set.
-		// Otherwise, set an empty string as the character set.
-		switch v := chars[0].(type) {
-		case string:
-			charSet = v
-		default:
-			charSet = ""
-		}
-	}
+func Trim(value any) any {
+	var charSet = " \n\r\t\v\x00"
 
 	// Handle different types of value
 	switch v := value.(type) {
