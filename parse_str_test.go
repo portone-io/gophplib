@@ -382,6 +382,16 @@ func TestParseStr(t *testing.T) {
 			input:    "   foo=bar",
 			expected: dict{"foo": "bar"},
 		},
+		{
+			name:     "ArrayThenString",
+			input:    "foo[]=x&foo[]=y&foo=bar",
+			expected: dict{"foo": "bar"},
+		},
+		{
+			name:     "StringThenArray",
+			input:    "foo=bar&foo[]=x&foo[]=y",
+			expected: dict{"foo": dict{0: "x", 1: "y"}},
+		},
 	}
 
 	for _, tc := range testCases {
