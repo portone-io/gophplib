@@ -1,5 +1,7 @@
 gophplib
 ========
+[![coverage icon]][coverage link]
+
 gophplib is a collection of PHP functions implemented in Go. We aim to achieve
 100% byte-to-byte bug-to-bug behavioral equivalence with the original PHP
 functions.
@@ -20,6 +22,8 @@ behavior that is 100% compatible with the PHP version.
 *gophplib* is primarily distributed under the terms of both the [MIT license]
 and the [Apache License (Version 2.0)]. See [COPYRIGHT] for details.
 
+[coverage icon]: https://github.com/portone-io/gophplib/wiki/coverage.svg
+[coverage link]: https://raw.githack.com/wiki/portone-io/gophplib/coverage.html
 [MIT license]: LICENSE-MIT
 [Apache License (Version 2.0)]: LICENSE-APACHE
 [COPYRIGHT]: COPYRIGHT
