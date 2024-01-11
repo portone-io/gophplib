@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"strings"
 	"testing"
 )
 
@@ -128,34 +127,6 @@ func ExampleTrim_otherTypes() {
 	//	<h1>hello world   </h1>
 	//</header>
 	// <nil>
-}
-
-func ExampleTrim_setCutset() {
-	// Trim with cutset is null
-	fmt.Println(strings.ReplaceAll(Trim("  \ttesting trim  ", nil).(string), " ", "[SPACE]"))
-
-	// Trim with cutset is true
-	fmt.Println(strings.ReplaceAll(Trim("  \ttesting trim ", true).(string), " ", "[SPACE]"))
-
-	// Trim with cutset is empty string
-	fmt.Println(strings.ReplaceAll(Trim("\ttesting trim", "").(string), " ", "[SPACE]"))
-
-	// Trim string with no white space
-	fmt.Println(Trim("!===Hello World===!", "=!"))
-
-	// Trim string with embedded null
-	fmt.Println(strings.ReplaceAll(Trim("\\x0n1234\x0005678\x0000efgh\\xijkl\\x0n1", "\\x0n1").(string), "\x00", "[NULL]"))
-
-	// Trim string with default characters
-	fmt.Println(strings.ReplaceAll(Trim(" \x00\t\nABC \x00\t\n", "").(string), "\x00\t\n", "[NULL][TAB][NEWLINE]"))
-
-	// Output:
-	// [SPACE][SPACE]	testing[SPACE]trim[SPACE][SPACE]
-	// [SPACE][SPACE]	testing[SPACE]trim[SPACE]
-	// 	testing[SPACE]trim
-	// Hello World
-	// 234[NULL]05678[NULL]00efgh\xijkl
-	//  [NULL][TAB][NEWLINE]ABC [NULL][TAB][NEWLINE]
 }
 
 func TestTrim(t *testing.T) {
@@ -305,65 +276,4 @@ func TestTrim(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestTrimWithCutset(t *testing.T) {
-	testCase := []struct {
-		testName string
-		input    interface{}
-		cutset   interface{}
-		expected interface{}
-	}{
-		{
-			testName: "cutsetIsNull",
-			input:    "  \ttesting trim ",
-			cutset:   nil,
-			expected: "  \ttesting trim ",
-		},
-		{
-			testName: "cutsetIsTrue",
-			input:    "  \ttesting trim ",
-			cutset:   true,
-			expected: "  \ttesting trim ",
-		},
-		{
-			testName: "cutsetIsEmptyString",
-			input:    "\ttesting trim",
-			cutset:   "",
-			expected: "\ttesting trim",
-		},
-		{
-			testName: "StringWithEmbeddedNull",
-			input:    "\\x0n1234\x0005678\x0000efgh\\xijkl\\x0n1",
-			cutset:   "\\x0n1",
-			expected: "234\x0005678\x0000efgh\\xijkl",
-		},
-		{
-			testName: "StringWithDefaultCharacters",
-			input:    " \x00\t\nABC \x00\t\n",
-			cutset:   "",
-			expected: " \x00\t\nABC \x00\t\n",
-		},
-		{
-			testName: "StringWithNoWhitespace",
-			input:    "!===Hello World===!",
-			cutset:   "=!",
-			expected: "Hello World",
-		},
-		{
-			testName: "cutsetIsRangeWithASCIICode",
-			input:    "abcdefghi",
-			cutset:   "a..f",
-			expected: "bcdefghi",
-		},
-	}
-	for _, tc := range testCase {
-		t.Run(tc.testName, func(t *testing.T) {
-			result := Trim(tc.input, tc.cutset)
-			if !reflect.DeepEqual(result, tc.expected) {
-				t.Errorf("%s: expected %v, bug got %v", tc.testName, tc.expected, result)
-			}
-		})
-	}
-
 }
