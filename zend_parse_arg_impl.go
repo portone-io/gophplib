@@ -36,7 +36,7 @@ func floatToString(value float64) string {
 	return fmt.Sprintf("%.*G", 14, value)
 }
 
-// ZendParseArgImpl attempts to replicate the behavior of the 'zend_parse_arg_impl' function
+// zendParseArgAsString attempts to replicate the behavior of the 'zend_parse_arg_impl' function
 // from PHP 5.6, specifically for the case where the 'spec' parameter is "s".
 // It handles conversion of different types to string in a way that aligns with PHP's type juggling rules.
 //
@@ -45,7 +45,7 @@ func floatToString(value float64) string {
 //   - https://github.com/php/php-src/blob/php-5.6.40/Zend/zend_API.c#L425-L470
 //   - https://github.com/php/php-src/blob/php-5.6.40/Zend/zend_operators.c#L593-L661
 //   - https://github.com/php/php-src/blob/php-5.6.40/Zend/zend_API.c#L261-L301
-func ZendParseArgImpl(value any) (string, error) {
+func zendParseArgAsString(value any) (string, error) {
 	var str string
 
 	switch v := value.(type) {

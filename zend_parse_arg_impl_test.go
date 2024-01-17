@@ -20,125 +20,7 @@ func (s Sample) toString() string {
 	return "sample object"
 }
 
-func ExampleZendParseArgImpl() {
-	// Plain string
-	fmt.Println(ZendParseArgImpl("Hello world"))
-
-	// Empty string
-	fmt.Println(ZendParseArgImpl(""))
-
-	// String with special characters
-	fmt.Println(ZendParseArgImpl("Line1\\nLine2\\tTab"))
-
-	// Int
-	var myInt int = 123
-	fmt.Println(ZendParseArgImpl(myInt))
-
-	// Int64
-	var myInt64 int64 = 9223372036854775807
-	fmt.Println(ZendParseArgImpl(myInt64))
-
-	// Negative int
-	myInt = -123
-	fmt.Println(ZendParseArgImpl(myInt))
-
-	// Float64
-	var myFloat64 float64 = 123.456
-	fmt.Println(ZendParseArgImpl(myFloat64))
-
-	// Float64 exceeds 14 digits
-	myFloat64 = 123.456789012345678
-	fmt.Println(ZendParseArgImpl(myFloat64))
-
-	// Exponent
-	var myExponent = 10.1234567e10
-	fmt.Println(ZendParseArgImpl(myExponent))
-
-	// Special float - NaN
-	var myNan = math.NaN()
-	fmt.Println(ZendParseArgImpl(myNan))
-
-	// Special float - positive infinity
-	var myInf = math.Inf(1)
-	fmt.Println(ZendParseArgImpl(myInf))
-
-	// Special float - negative infinity
-	myInf = math.Inf(-1)
-	fmt.Println(ZendParseArgImpl(myInf))
-
-	// Negative float64
-	myFloat64 = -123.456
-	fmt.Println(ZendParseArgImpl(myFloat64))
-
-	// Zero float
-	myFloat64 = 0.0
-	fmt.Println(ZendParseArgImpl(myFloat64))
-
-	// True
-	var myTrue = true
-	fmt.Println(ZendParseArgImpl(myTrue))
-
-	// False
-	var myFalse = false
-	fmt.Println(ZendParseArgImpl(myFalse))
-
-	// Nil
-	fmt.Println(ZendParseArgImpl(nil))
-
-	// Object with toString function
-	var myObject = Sample{}
-	fmt.Println(ZendParseArgImpl(myObject))
-
-	// Object without toString function
-	var myObject2 = Sample2{}
-	fmt.Println(ZendParseArgImpl(myObject2))
-
-	// Int Array
-	var myArray []int = []int{1, 2, 3}
-	fmt.Println(ZendParseArgImpl(myArray))
-
-	// String array
-	var myArray2 = []string{"hello", "world"}
-	fmt.Println(ZendParseArgImpl(myArray2))
-
-	// Resource
-	file, osErr := os.Open("README.md")
-	if osErr != nil {
-		panic(osErr)
-	}
-	fmt.Println(ZendParseArgImpl(file))
-
-	// Custom type
-	var myCustom CustomType = CustomType{"Hello world"}
-	fmt.Println(ZendParseArgImpl(myCustom))
-
-	// Output:
-	// Hello world <nil>
-	//  <nil>
-	// Line1\nLine2\tTab <nil>
-	// 123 <nil>
-	// 9223372036854775807 <nil>
-	// -123 <nil>
-	// 123.456 <nil>
-	// 123.45678901235 <nil>
-	// 101234567000 <nil>
-	// NAN <nil>
-	// INF <nil>
-	// -INF <nil>
-	// -123.456 <nil>
-	// 0 <nil>
-	// 1 <nil>
-	//  <nil>
-	//  <nil>
-	// sample object <nil>
-	// <nil> unsupported type : gophplib.Sample2
-	// <nil> unsupported type : []int
-	// <nil> unsupported type : []string
-	// <nil> unsupported type : *os.File
-	// <nil> unsupported type : gophplib.CustomType
-}
-
-func TestZendParseArgImpl(t *testing.T) {
+func TestZendParseArgAsString(t *testing.T) {
 	file, osErr := os.Open("README.md")
 	if osErr != nil {
 		panic(osErr)
@@ -276,7 +158,7 @@ func TestZendParseArgImpl(t *testing.T) {
 	}
 	for _, tc := range testCase {
 		t.Run(tc.testName, func(t *testing.T) {
-			result, err := ZendParseArgImpl(tc.input)
+			result, err := zendParseArgAsString(tc.input)
 			if err != nil {
 				expectedErr := fmt.Errorf("unsupported type : %s", reflect.TypeOf(tc.input))
 				if err.Error() != expectedErr.Error() {
