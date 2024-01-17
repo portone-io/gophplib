@@ -9,7 +9,7 @@ import (
 // In PHP 5.6, when the ord() function is used with a data type other
 // than a string, it automatically converts the given variable into a string
 // before processing it. To achieve the same behavior in Go,
-// this function converts an argument to string using the ZendParseArgImpl() function.
+// this function converts an argument to string using the zendParseArgAsString() function.
 // For more information, see the [official PHP documentation].
 //
 // Reference :
@@ -23,7 +23,7 @@ import (
 // [official PHP documentation]: https://www.php.net/manual/en/function.ord.php
 func Ord(character any) (byte, error) {
 	// Convert a character to string
-	characterString, err := ZendParseArgImpl(character)
+	characterString, err := zendParseArgAsString(character)
 	if err != nil {
 		return 0, fmt.Errorf("unsupported type : %s", reflect.TypeOf(character))
 	}
