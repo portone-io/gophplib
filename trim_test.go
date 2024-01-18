@@ -21,7 +21,7 @@ func (c Cat) toString() string {
 	return fmt.Sprintf("name is %s and %d years old", c.name, c.age)
 }
 
-func customTrim(value interface{}) string {
+func customTrim(value any) string {
 	return " hello world "
 }
 
@@ -36,9 +36,9 @@ func ExampleTrim_string() {
 	fmt.Println(Trim(" \x00\t\nABC \x00\t\n"))
 
 	// Output:
-	// Hello world
-	//
-	// ABC
+	// Hello world <nil>
+	//  <nil>
+	// ABC <nil>
 }
 
 func ExampleTrim_float() {
@@ -64,13 +64,13 @@ func ExampleTrim_float() {
 	fmt.Println(Trim(12345678912340.40))
 
 	// Output:
-	// 123.4
-	// -123.4
-	// 101234567000
-	// 1230.1298473259
-	// 1230.129847325
-	// 1.2345678912346E+14
-	// 12345678912340
+	// 123.4 <nil>
+	// -123.4 <nil>
+	// 101234567000 <nil>
+	// 1230.1298473259 <nil>
+	// 1230.129847325 <nil>
+	// 1.2345678912346E+14 <nil>
+	// 12345678912340 <nil>
 }
 
 func ExampleTrim_otherTypes() {
@@ -84,7 +84,7 @@ func ExampleTrim_otherTypes() {
 	fmt.Println(Trim(0))
 
 	// Trim empty array
-	fmt.Println(Trim([]interface{}{}))
+	fmt.Println(Trim([]any{}))
 
 	// Trim bool (true)
 	fmt.Println(Trim(true))
@@ -114,19 +114,19 @@ func ExampleTrim_otherTypes() {
 	fmt.Println(Trim(file))
 
 	// Output:
-	// 123
-	// -123
-	// 0
-	// <nil>
-	// 1
-	//
-	// name is nabi and 3 years old
-	// <nil>
-	// hello world
+	// 123 <nil>
+	// -123 <nil>
+	// 0 <nil>
+	//  unsupported type : []interface {}
+	// 1 <nil>
+	//  <nil>
+	// name is nabi and 3 years old <nil>
+	//  unsupported type : gophplib.Dog
+	// hello world <nil>
 	// <header>
 	//	<h1>hello world   </h1>
-	//</header>
-	// <nil>
+	//</header> <nil>
+	//  unsupported type : *os.File
 }
 
 func TestTrim(t *testing.T) {
@@ -144,10 +144,11 @@ func TestTrim(t *testing.T) {
 		panic(err)
 	}
 
+	// Successful cases
 	testCase := []struct {
 		testName string
-		input    interface{}
-		expected interface{}
+		input    any
+		expected any
 	}{
 		{
 			testName: "BasicTest",
@@ -173,16 +174,6 @@ func TestTrim(t *testing.T) {
 			testName: "Zero",
 			input:    0,
 			expected: "0",
-		},
-		{
-			testName: "EmptyArray",
-			input:    []interface{}{},
-			expected: nil,
-		},
-		{
-			testName: "Array",
-			input:    []interface{}{"foo", "456", 7},
-			expected: nil,
 		},
 		{
 			testName: "True",
@@ -240,11 +231,6 @@ func TestTrim(t *testing.T) {
 			expected: c.toString(),
 		},
 		{
-			testName: "ObjectWithoutToString",
-			input:    d,
-			expected: nil,
-		},
-		{
 			testName: "Function",
 			input:    customTrim(nil),
 			expected: "hello world",
@@ -257,11 +243,6 @@ func TestTrim(t *testing.T) {
 			expected: "<header>\n\t<h1>hello world   </h1>\n</header>",
 		},
 		{
-			testName: "Resource",
-			input:    file,
-			expected: nil,
-		},
-		{
 			testName: "StringWithDefaultCharacters",
 			input:    " \x00\t\nABC \x00\t\n",
 			expected: "ABC",
@@ -270,9 +251,45 @@ func TestTrim(t *testing.T) {
 
 	for _, tc := range testCase {
 		t.Run(tc.testName, func(t *testing.T) {
-			result := Trim(tc.input)
+			result, err := Trim(tc.input)
+			if err != nil {
+				t.Errorf("%s: expected success, bug got error %v", tc.testName, err)
+			}
 			if !reflect.DeepEqual(result, tc.expected) {
 				t.Errorf("%s: expected %v, bug got %v", tc.testName, tc.expected, result)
+			}
+		})
+	}
+
+	// Failing cases
+	errorCase := []struct {
+		testName string
+		input    any
+		expected any
+	}{
+		{
+			testName: "EmptyArray",
+			input:    []any{},
+		},
+		{
+			testName: "Array",
+			input:    []any{"foo", "456", 7},
+		},
+		{
+			testName: "ObjectWithoutToString",
+			input:    d,
+		},
+		{
+			testName: "Resource",
+			input:    file,
+		},
+	}
+
+	for _, tc := range errorCase {
+		t.Run(tc.testName, func(t *testing.T) {
+			result, err := Trim(tc.input)
+			if err == nil {
+				t.Errorf("%s: expected error, bug got %v", tc.testName, result)
 			}
 		})
 	}
