@@ -66,83 +66,35 @@ func ExampleOrd_variation() {
 
 func TestOrd(t *testing.T) {
 	testCases := []struct {
-		testName string
-		input    any
-		expected byte
+		any
+		byte
 	}{
-		{
-			testName: "Plain char",
-			input:    "a",
-			expected: 97,
-		},
-		{
-			testName: "Plain string",
-			input:    "Hello",
-			expected: 72,
-		},
-		{
-			testName: "Special character",
-			input:    "!",
-			expected: 33,
-		},
-		{
-			testName: "New line character",
-			input:    "\n",
-			expected: 10,
-		},
-		{
-			testName: "Hexadecimal representation of newline character",
-			input:    "\x0A",
-			expected: 10,
-		},
-		{
-			testName: "Hexadecimal representation of newline character",
-			input:    "\x0A",
-			expected: 10,
-		},
-		{
-			testName: "Character '0'",
-			input:    "0",
-			expected: 48,
-		},
-		{
-			testName: "Array",
-			input:    []int{1},
-			expected: 0,
-		},
-		{
-			testName: "Nil",
-			input:    nil,
-			expected: 0,
-		},
-		{
-			testName: "Empty string",
-			input:    "",
-			expected: 0,
-		},
-		{
-			testName: "Unset variable",
-			input:    unsetVariable,
-			expected: 0,
-		},
-		{
-			testName: "Emoji",
-			input:    "🐘",
-			expected: 240,
-		},
+		{"a", 97},
+		{"Hello", 72},
+		{"!", 33},
+		{"\n", 10},
+		{"\x0A", 10},
+		{"\x0A", 10},
+		{"0", 48},
+		{[]int{1}, 0},
+		{nil, 0},
+		{"", 0},
+		{unsetVariable, 0},
+		{"🐘", 240},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.testName, func(t *testing.T) {
-			result, err := Ord(tc.input)
+		testName := fmt.Sprintf("%v", tc.any)
+		t.Run(testName, func(t *testing.T) {
+			result, err := Ord(tc.any)
 			if err != nil {
-				expectedErr := fmt.Errorf("unsupported type : %s", reflect.TypeOf(tc.input))
-				if err.Error() != expectedErr.Error() {
-					t.Errorf("%s: expected error : %s, got %s", tc.testName, expectedErr, err)
+				byteErr := fmt.Errorf("unsupported type : %s", reflect.TypeOf(tc.any))
+				if err.Error() != byteErr.Error() {
+					t.Errorf("%s: byte error : %s, got %s", testName, byteErr, err)
 				}
 			} else {
-				if !reflect.DeepEqual(result, tc.expected) {
-					t.Errorf("%s: expected %v, got %v", tc.testName, tc.expected, result)
+				if !reflect.DeepEqual(result, tc.byte) {
+					t.Errorf("%s: byte %v, got %v", testName, tc.byte, result)
 				}
 			}
 		})
