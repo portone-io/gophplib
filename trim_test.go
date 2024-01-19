@@ -146,150 +146,59 @@ func TestTrim(t *testing.T) {
 
 	// Successful cases
 	testCase := []struct {
-		testName string
-		input    any
-		expected any
+		any
+		string
 	}{
-		{
-			testName: "BasicTest",
-			input:    "Hello world ",
-			expected: "Hello world",
-		},
-		{
-			testName: "EmptyString",
-			input:    "",
-			expected: "",
-		},
-		{
-			testName: "Integer",
-			input:    123,
-			expected: "123",
-		},
-		{
-			testName: "NegativeInteger",
-			input:    -123,
-			expected: "-123",
-		},
-		{
-			testName: "Zero",
-			input:    0,
-			expected: "0",
-		},
-		{
-			testName: "True",
-			input:    true,
-			expected: "1",
-		},
-		{
-			testName: "False",
-			input:    false,
-			expected: "",
-		},
-		{
-			testName: "Nil",
-			input:    nil,
-			expected: "",
-		},
-		{
-			testName: "Float",
-			input:    123.40,
-			expected: "123.4",
-		},
-		{
-			testName: "NegativeFloat",
-			input:    -123.40,
-			expected: "-123.4",
-		},
-		{
-			testName: "Exponent",
-			input:    10.1234567e10,
-			expected: "101234567000",
-		},
-		{
-			testName: "FloatExceeds14Digits",
-			input:    1230.12984732591475609346509132875091237,
-			expected: "1230.1298473259",
-		},
-		{
-			testName: "FloatEndsWith0",
-			input:    1230.12984732500000000000000000000000000,
-			expected: "1230.129847325",
-		},
-		{
-			testName: "IntegerExceeds14Digits",
-			input:    123456789123456.40,
-			expected: "1.2345678912346E+14",
-		},
-		{
-			testName: "IntegerEndsWith0",
-			input:    12345678912340.40,
-			expected: "12345678912340",
-		},
-		{
-			testName: "ObjectHasToString",
-			input:    c,
-			expected: c.toString(),
-		},
-		{
-			testName: "Function",
-			input:    customTrim(nil),
-			expected: "hello world",
-		},
-		{
-			testName: "HereDocuments",
-			input: `<header>
+		{"Hello world ", "Hello world"},
+		{"", ""},
+		{123, "123"},
+		{-123, "-123"},
+		{0, "0"},
+		{true, "1"},
+		{false, ""},
+		{nil, ""},
+		{123.40, "123.4"},
+		{-123.40, "-123.4"},
+		{10.1234567e10, "101234567000"},
+		{1230.12984732591475609346509132875091237, "1230.1298473259"},
+		{1230.12984732500000000000000000000000000, "1230.129847325"},
+		{123456789123456.40, "1.2345678912346E+14"},
+		{12345678912340.40, "12345678912340"},
+		{c, c.toString()},
+		{customTrim(nil), "hello world"},
+		{`<header>
 	<h1>hello world   </h1>
-</header>`,
-			expected: "<header>\n\t<h1>hello world   </h1>\n</header>",
-		},
-		{
-			testName: "StringWithDefaultCharacters",
-			input:    " \x00\t\nABC \x00\t\n",
-			expected: "ABC",
-		},
+</header>`, "<header>\n\t<h1>hello world   </h1>\n</header>"},
+		{" \x00\t\nABC \x00\t\n", "ABC"},
 	}
 
 	for _, tc := range testCase {
-		t.Run(tc.testName, func(t *testing.T) {
-			result, err := Trim(tc.input)
+		testName := fmt.Sprintf("%v", tc.any)
+		t.Run(testName, func(t *testing.T) {
+			result, err := Trim(tc.any)
 			if err != nil {
-				t.Errorf("%s: expected success, bug got error %v", tc.testName, err)
+				t.Errorf("%s: string success, bug got error %v", testName, err)
 			}
-			if !reflect.DeepEqual(result, tc.expected) {
-				t.Errorf("%s: expected %v, bug got %v", tc.testName, tc.expected, result)
+			if !reflect.DeepEqual(result, tc.string) {
+				t.Errorf("%s: string %v, bug got %v", testName, tc.string, result)
 			}
 		})
 	}
 
 	// Failing cases
-	errorCase := []struct {
-		testName string
-		input    any
-		expected any
-	}{
-		{
-			testName: "EmptyArray",
-			input:    []any{},
-		},
-		{
-			testName: "Array",
-			input:    []any{"foo", "456", 7},
-		},
-		{
-			testName: "ObjectWithoutToString",
-			input:    d,
-		},
-		{
-			testName: "Resource",
-			input:    file,
-		},
+	errorCase := []any{
+		[]any{},
+		[]any{"foo", "456", 7},
+		d,
+		file,
 	}
 
 	for _, tc := range errorCase {
-		t.Run(tc.testName, func(t *testing.T) {
-			result, err := Trim(tc.input)
+		testName := fmt.Sprintf("%v", tc)
+		t.Run(testName, func(t *testing.T) {
+			result, err := Trim(tc)
 			if err == nil {
-				t.Errorf("%s: expected error, bug got %v", tc.testName, result)
+				t.Errorf("%s:  error, bug got %v", testName, result)
 			}
 		})
 	}
