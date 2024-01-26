@@ -105,3 +105,10 @@ func TestBase64Encode(t *testing.T) {
 		})
 	}
 }
+
+func TestHugeBase64Error(t *testing.T) {
+	result, err := Base64Encode(string(make([]byte, 1610612734)))
+	if err == nil || err.Error() != "string too long, maximum is 1610612733" {
+		t.Errorf("Expected error, got (%v, %v)", result, err)
+	}
+}
