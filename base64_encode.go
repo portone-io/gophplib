@@ -47,7 +47,7 @@ func Base64Encode(value any) (string, error) {
 	// However, to maintain exact behavioral parity with the PHP implementation,
 	// this function includes memory limit check too.
 	if (len(characterString)+2)/3 > math.MaxInt32/4 {
-		return "", fmt.Errorf("string too long, maximum is %d", math.MaxInt32/4)
+		return "", fmt.Errorf("string too long, maximum is 1610612733")
 	}
 	encodedString := base64.StdEncoding.EncodeToString([]byte(characterString))
 	return encodedString, nil
