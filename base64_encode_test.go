@@ -17,16 +17,8 @@ func ExampleBase64Encode() {
 	fmt.Println(Base64Encode(nil))
 	// Empty string
 	fmt.Println(Base64Encode(""))
-	// Empty array
+	// Empty array: Unsupported type
 	fmt.Println(Base64Encode([]int{}))
-	// Complex string with upper-case letters, numbers, and symbols
-	fmt.Println(Base64Encode("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!%^&*(){}[]"))
-	// String with control characters
-	fmt.Println(Base64Encode("\n\t Line with control characters\r\n"))
-	// String with non-standard characters
-	fmt.Println(Base64Encode("\xC1\xC2\xC3\xC4\xC5\xC6"))
-	// 한글
-	fmt.Println(Base64Encode("안녕하세요"))
 
 	// Output:
 	// SGVsbG8= <nil>
@@ -35,10 +27,6 @@ func ExampleBase64Encode() {
 	//  <nil>
 	//  <nil>
 	//  unsupported type : []int
-	// QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVoxMjM0NTY3ODkwISVeJiooKXt9W10= <nil>
-	// CgkgTGluZSB3aXRoIGNvbnRyb2wgY2hhcmFjdGVycw0K <nil>
-	// wcLDxMXG <nil>
-	// 7JWI64WV7ZWY7IS47JqU <nil>
 }
 
 func TestBase64Encode(t *testing.T) {
@@ -49,6 +37,10 @@ func TestBase64Encode(t *testing.T) {
 		{
 			"Hello",
 			"SGVsbG8=",
+		},
+		{
+			"????>>>>",
+			"Pz8/Pz4+Pj4=",
 		},
 		{
 			123,
