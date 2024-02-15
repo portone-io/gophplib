@@ -16,6 +16,10 @@ import (
 // function from the package strings. For more detailed information about the
 // trim function in the package strings, see the [strings's trim documentation]
 //
+// This function returns error if given argument is not one of following:
+// string, int, int64, float64, bool, nil, and any type which does not implement
+// interface { toString() string }.
+//
 // NOTE: This function does not support the second parameter of original parse_str yet.
 // It only strips the default characters (" \n\r\t\v\x00")
 //

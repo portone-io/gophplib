@@ -18,6 +18,10 @@ import (
 // For more detailed information about the EncodeToString function in the package encoding/base64,
 // see the [encoding/base64's EncodeToString documentation]
 //
+// This function returns error if given argument is not one of following:
+// string, int, int64, float64, bool, nil, and any type which does not implement
+// interface { toString() string }.
+//
 // PHP references:
 //   - base64_encode definition:
 //     https://github.com/php/php-src/blob/php-5.6.40/ext/standard/base64.c#L224-L241

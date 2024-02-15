@@ -12,6 +12,10 @@ import (
 // this function converts an argument to string using the zendParseArgAsString() function.
 // For more information, see the [official PHP documentation].
 //
+// This function returns error if given argument is not one of following:
+// string, int, int64, float64, bool, nil, and any type which does not implement
+// interface { toString() string }.
+//
 // Reference :
 //   - https://github.com/php/php-src/blob/php-5.6.40/ext/standard/string.c#L2666-L2676
 //
