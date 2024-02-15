@@ -109,3 +109,13 @@ func TestStrlen(t *testing.T) {
 		})
 	}
 }
+
+func TestStrlenError(t *testing.T) {
+	_, err := Strlen([]int{1, 2, 3})
+	if err == nil {
+		t.Errorf("expected error, got nil")
+	}
+	if err.Error() != "unsupported type : []int" {
+		t.Errorf("expected error : unsupported type : []int, got %s", err)
+	}
+}
