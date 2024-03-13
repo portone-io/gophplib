@@ -119,6 +119,10 @@ func TestConvertToString(t *testing.T) {
 			"1230.129847325",
 		},
 		{
+			float32(5.0546941757202),
+			"5.0546941757202",
+		},
+		{
 			true,
 			"1",
 		},
