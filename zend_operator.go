@@ -13,7 +13,11 @@ type toStringAble interface {
 	toString() string
 }
 
-// floatToString converts a float64 to a string based on the PHP 5.6 rules.
+type Floats interface {
+	float32 | float64
+}
+
+// floatToString converts a float32 or float64 to a string based on the PHP 5.6 rules.
 //   - Allows up to a maximum of 14 digits, including both integer and decimal places.
 //   - Remove trailing zeros from the fractional part
 //     ex) 123.4000 → "123.4"
@@ -24,19 +28,23 @@ type toStringAble interface {
 //   - If the total number of digits exceeds 14, truncate the decimal places.
 //     ex) 123.45678901234 → "123.4567890123"
 //
+// NOTE : Converting float32 to float64 may lead to precision loss, hence using float64
+// is recommended for higher accuracy.
 // Reference :
 //   - https://github.com/php/php-src/blob/php-5.6.40/Zend/zend_operators.c#L627-L633
-func floatToString(value float64) string {
-	if math.IsNaN(value) {
+func floatToString[T Floats](value T) string {
+	f64 := float64(value)
+
+	if math.IsNaN(f64) {
 		return "NAN"
 	}
-	if math.IsInf(value, 1) {
+	if math.IsInf(f64, 1) {
 		return "INF"
 	}
-	if math.IsInf(value, -1) {
+	if math.IsInf(f64, -1) {
 		return "-INF"
 	}
-	return fmt.Sprintf("%.*G", 14, value)
+	return fmt.Sprintf("%.*G", 14, f64)
 }
 
 // ConvertToString attempts to convert the given value to string, emulating PHP 5.6'S _convert_to_string behavior.
@@ -58,36 +66,37 @@ func ConvertToString(value any) (string, error) {
 		return "", nil
 	}
 
-	// use reflection to handle basic and composite types dynamically
-	v := reflect.ValueOf(value)
-	switch v.Kind() {
-	case reflect.String:
-		return v.String(), nil
-	case reflect.Bool:
-		// convert boolean to "1" or "" for true and false
-		if v.Bool() {
+	// handle basic and composite types dynamically
+	switch v := value.(type) {
+	case string:
+		return v, nil
+	case bool:
+		if v {
 			return "1", nil
 		} else {
 			return "", nil
 		}
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return fmt.Sprintf("%d", v.Int()), nil
-	case reflect.Float32, reflect.Float64:
-		return floatToString(v.Float()), nil
-	case reflect.Array, reflect.Slice, reflect.Map:
-		return "Array", nil
-	}
-
-	// check for special types such as a pointer of file, network, database resources and
-	// type which does not implement interface { toString() string }
-	switch v := value.(type) {
-	case toStringAble:
-		return v.toString(), nil
+	case int, int8, int16, int32, int64:
+		return fmt.Sprintf("%d", v), nil
+	case float32:
+		return floatToString(v), nil
+	case float64:
+		return floatToString(v), nil
+	// check for special types such as a pointer of file, network, database resources
 	case *os.File, *net.Conn, *sql.DB:
 		// using a resource's address as the resource ID
 		return fmt.Sprintf("Resource id %p", v), nil
-	default:
-		// return an error for unsupported types.
-		return "", fmt.Errorf("unsupported type : %T", value)
 	}
+	// use reflection to handle array, slice, map types
+	t := reflect.ValueOf(value).Kind()
+	if t == reflect.Array || t == reflect.Slice || t == reflect.Map {
+		return "Array", nil
+	}
+	if t == reflect.Struct {
+		if result, ok := value.(toStringAble); ok {
+			return result.toString(), nil
+		}
+	}
+	// return an error for unsupported types.
+	return "", fmt.Errorf("unsupported type : %T", value)
 }
