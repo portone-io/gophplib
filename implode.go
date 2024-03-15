@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/elliotchance/orderedmap/v2"
 )
 
 // Implode replicates the behavior of PHP 5.6's implode function in GO.
@@ -12,8 +14,9 @@ import (
 //
 // The function supports flexible argument patterns to accommodate various use cases.
 //   - arg1: Can be either a string (used as the separator) or an array of elements to be joined.
-//   - arg2: Optional. When provided, it expects the first element to serve as the array of elements to be joined
-//     if arg1 is a string, or as the separator if arg1 is an array.
+//   - options: Optional. When provided, the first element is used as arg2.
+//     If arg1 is a string, arg2 serves as the array of elements to be joined.
+//     If arg1 is an array, arg2 serves as the separator.
 //
 // Behavior:
 //
@@ -22,13 +25,16 @@ import (
 //   - If arg1 is not an array, the function returns an error.
 //
 // 2. If both arg1 and arg2 are provided:
-//   - If arg1 is an array, the first element of arg2 is converted to string and used as the separator.
-//   - If arg1 is not an array and the first element of arg2 is an array, arg1 is converted to a string
-//     and used as the separator, with the first of element of arg2 being the array to implode.
-//   - If neither arg1 nor the first of element of arg2 is an array, the function returns an error.
+//   - If arg1 is an array, arg2 is converted to string and used as the separator.
+//   - If arg1 is not an array and arg2 is an array, arg1 is converted to a string
+//     and used as the separator, with arg2 being the array to implode.
+//   - If neither arg1 nor arg2 is an array, the function returns an error.
 //
 // Non-string elements within the array are converted to strings using a ConvertToString function
 // before joining.
+// Due to language differences between PHP and Go, the implode function support OrderedMap type from the [orderedmap library],
+// ensuring ordered map functionality. When imploding map types, please utilize the OrderedMap type from the [orderedmap library]
+// to maintain element order. If you use map type, not OrderedMap type, the order of the results cannot be guaranteed.
 //
 // reference:
 //   - implode: https://github.com/php/php-src/blob/php-5.6.40/ext/standard/string.c#L1229-L1269
@@ -39,46 +45,33 @@ import (
 //   - https://github.com/php/php-src/blob/php-5.6.40/ext/standard/tests/strings/implode1.phpt
 //
 // [official PHP documentation]: https://www.php.net/manual/en/function.implode.php
-func Implode(arg1 any, arg2 ...any) (string, error) {
+// [orderedmap library]: https://pkg.go.dev/github.com/elliotchance/orderedmap/v2
+func Implode(arg1 any, options ...any) (string, error) {
 	var delim string
 	var arr []any
 
-	var IsArrayOrSlice = func(arg any) bool {
-		if arg != nil {
-			argType := reflect.TypeOf(arg).Kind()
-			return argType == reflect.Slice || argType == reflect.Array
-		}
-		return false
-	}
+	// Check arg1 is one of array, slice, map, or ordered ap
+	isArg1CollectionType := isCollectionType(arg1)
 
-	IsArg1ArrayOrSlice := IsArrayOrSlice(arg1)
-	// Check if arg2 is not provided
-	if len(arg2) == 0 {
-		if IsArg1ArrayOrSlice {
-			v := reflect.ValueOf(arg1)
-			for i := 0; i < v.Len(); i++ {
-				arr = append(arr, v.Index(i).Interface())
-			}
-			delim = ""
-		} else {
-			return "", fmt.Errorf("argument must be an array, but got %v", reflect.TypeOf(arg1))
+	// Check if options is not provided
+	if len(options) == 0 {
+		if !isArg1CollectionType {
+			return "", fmt.Errorf("argument must be one of array, slice, or ordered map, but got %v", reflect.TypeOf(arg1))
 		}
+		aggregateValues(arg1, &arr)
 	} else {
-		IsArg2ArrayOrSlice := IsArrayOrSlice(arg2[0])
-		if IsArg1ArrayOrSlice {
-			delim, _ = ConvertToString(arg2[0])
-			v := reflect.ValueOf(arg1)
-			for i := 0; i < v.Len(); i++ {
-				arr = append(arr, v.Index(i).Interface())
-			}
-		} else if !IsArg1ArrayOrSlice && IsArg2ArrayOrSlice {
+		arg2 := options[0]
+		// Check arg2 is one of array, slice, or ordered map
+		isArg2CollectionType := isCollectionType(arg2)
+
+		if isArg1CollectionType {
+			delim, _ = ConvertToString(arg2)
+			aggregateValues(arg1, &arr)
+		} else if !isArg1CollectionType && isArg2CollectionType {
 			delim, _ = ConvertToString(arg1)
-			v := reflect.ValueOf(arg2[0])
-			for i := 0; i < v.Len(); i++ {
-				arr = append(arr, v.Index(i).Interface())
-			}
+			aggregateValues(arg2, &arr)
 		} else {
-			return "", fmt.Errorf("invalid arguments passed, got %v, %v", reflect.TypeOf(arg1), reflect.TypeOf(arg2[0]))
+			return "", fmt.Errorf("invalid arguments passed, got %v, %v", reflect.TypeOf(arg1), reflect.TypeOf(arg2))
 		}
 	}
 
@@ -100,4 +93,42 @@ func Implode(arg1 any, arg2 ...any) (string, error) {
 		}
 	}
 	return builder.String(), nil
+}
+
+// isOrderedMap checks if the argument is an instance of ordered map
+func isOrderedMap(arg any) bool {
+	_, ok := arg.(*orderedmap.OrderedMap[any, any])
+	return ok
+}
+
+// isCollectionType checks if the argument is either an array, a slice, a map or ordered map
+func isCollectionType(arg any) bool {
+	if arg == nil {
+		return false
+	}
+
+	argType := reflect.TypeOf(arg).Kind()
+	return isOrderedMap(arg) || argType == reflect.Slice || argType == reflect.Array || argType == reflect.Map
+}
+
+// aggregateValues extracts the stored value from different types of source:
+// ordered map, map, slice and array. It gathers there values into an arr and returns it.
+func aggregateValues(source any, arr *[]any) {
+	if isOrderedMap(source) {
+		om, _ := source.(*orderedmap.OrderedMap[any, any])
+		for el := om.Front(); el != nil; el = el.Next() {
+			*arr = append(*arr, el.Value)
+		}
+	} else {
+		v := reflect.ValueOf(source)
+		if v.Kind() == reflect.Map {
+			for _, value := range v.MapKeys() {
+				*arr = append(*arr, v.MapIndex(value).Interface())
+			}
+		} else if v.Kind() == reflect.Slice || v.Kind() == reflect.Array {
+			for i := 0; i < v.Len(); i++ {
+				*arr = append(*arr, v.Index(i).Interface())
+			}
+		}
+	}
 }
