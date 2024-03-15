@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/elliotchance/orderedmap/v2"
 )
 
 var multiTypedArr = []any{
@@ -102,6 +104,12 @@ func ExampleImplode_variation() {
 	// Arg1 is string and arg2 is object array
 	fmt.Println(Implode(", ", []any{Cat{"nabi", 3}}))
 
+	// Initialize small scale map
+	smallMap := orderedmap.NewOrderedMap[any, any]()
+	smallMap.Set("key1", "value1")
+	smallMap.Set("key2", "value2")
+	fmt.Println(Implode(", ", smallMap))
+
 	// Output:
 	// 2TRUE0TRUE-639TRUE1TRUEGOTRUETRUETRUETRUE TRUEstringNULwithNUL...NUL <nil>
 	// 2101-639111GO1111 1stringNULwithNUL...NUL <nil>
@@ -115,9 +123,11 @@ func ExampleImplode_variation() {
 	// 2\00\0-639\01\0GO\0\0\0\0 \0stringNULwithNUL...NUL <nil>
 	// 1sep2sep3.45sep1 <nil>
 	// name is nabi and 3 years old <nil>
+	// value1, value2 <nil>
 }
 
 func ExampleImplode_error() {
+	// File resource
 	fmt.Println(Implode(", ", getFile()))
 	// Only arg1
 	fmt.Println(Implode("glue"))
@@ -139,7 +149,7 @@ func ExampleImplode_error() {
 
 	// Output:
 	//  invalid arguments passed, got string, *os.File
-	//  argument must be an array, but got string
+	//  argument must be one of array, slice, or ordered map, but got string
 	//  invalid arguments passed, got string, int
 	//  invalid arguments passed, got string, <nil>
 	//  invalid arguments passed, got int, string
@@ -178,6 +188,7 @@ func TestImplode(t *testing.T) {
 		{12, "pieces", ""},
 		{nil, "abcd", ""},
 		{", ", []any{Cat{"nabi", 3}}, "name is nabi and 3 years old"},
+		{", ", map[string]string{"foo": "bar"}, "bar"},
 	}
 
 	for _, tc := range testCases {
@@ -189,7 +200,7 @@ func TestImplode(t *testing.T) {
 					if tc.string != "" {
 						t.Errorf("%s: expected : %s, got error %s", testName, tc.string, err.Error())
 					} else {
-						expectedErr := fmt.Errorf("argument must be an array, but got %v", reflect.TypeOf(tc.arg1))
+						expectedErr := fmt.Errorf("argument must be one of array, slice, or ordered map, but got %v", reflect.TypeOf(tc.arg1))
 						if err.Error() != expectedErr.Error() {
 							t.Errorf("%s: expected error : %s, got %s", testName, expectedErr.Error(), err.Error())
 						}
@@ -235,4 +246,87 @@ func TestImplode(t *testing.T) {
 			t.Errorf("%s: error, but got %v", testName, result)
 		}
 	})
+}
+
+func BenchmarkImplode(b *testing.B) {
+	// Initialization
+	var (
+		// Small scale map
+		smallMap = orderedmap.NewOrderedMap[any, any]()
+
+		// Medium scale map
+		mediumMap = orderedmap.NewOrderedMap[any, any]()
+
+		// Large scale map
+		largeMap = orderedmap.NewOrderedMap[any, any]()
+
+		// String-based map
+		stringMap = orderedmap.NewOrderedMap[any, any]()
+
+		// Integer-based map
+		intMap = orderedmap.NewOrderedMap[any, any]()
+	)
+
+	// Initialize small scale map
+	smallMap.Set("key1", "value1")
+	smallMap.Set("key2", "value2")
+
+	// Initialize medium scale map
+	for i := 0; i < 50; i++ {
+		mediumMap.Set(fmt.Sprintf("key%d", i), fmt.Sprintf("value%d", i))
+	}
+
+	// Initialize large scale map
+	for i := 0; i < 1000; i++ {
+		largeMap.Set(fmt.Sprintf("key%d", i), fmt.Sprintf("value%d", i))
+	}
+
+	// Initialize string-based map
+	for i := 0; i < 100; i++ {
+		stringMap.Set(fmt.Sprintf("str%d", i), fmt.Sprintf("val%d", i))
+	}
+
+	// Initialize integer-based map
+	for i := 0; i < 100; i++ {
+		intMap.Set(i, i)
+	}
+
+	testCases := []struct {
+		name string
+		arg1 any
+		arg2 any
+	}{
+		{"SmallMap", smallMap, nil},
+		{"MediumMap", mediumMap, nil},
+		{"LargeMap", largeMap, nil},
+		{"StringKeysMap", stringMap, nil},
+		{"IntegerKeysMap", intMap, nil},
+	}
+
+	for _, tc := range testCases {
+		b.Run(tc.name, func(b *testing.B) {
+			var arg2Any []any
+			if tc.arg2 != nil {
+				switch v := tc.arg2.(type) {
+				case string:
+					arg2Any = append(arg2Any, v)
+				case []string:
+					for _, item := range v {
+						arg2Any = append(arg2Any, item)
+					}
+				default:
+					arg2Any = append(arg2Any, v)
+				}
+			}
+
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				if tc.arg2 == nil {
+					_, _ = Implode(tc.arg1)
+				} else {
+					_, _ = Implode(tc.arg1, arg2Any...)
+				}
+			}
+		})
+	}
 }
