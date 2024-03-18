@@ -2,43 +2,16 @@ package gophplib
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 )
-
-type toStringAble interface {
-	toString() string
-}
-
-// floatToString converts a float64 to a string based on the PHP 5.6 rules.
-//   - Allows up to a maximum of 14 digits, including both integer and decimal places.
-//   - Remove trailing zeros from the fractional part
-//     ex) 123.4000 → "123.4"
-//   - Keep the values as is if the last digit is not 0.
-//     ex) 123.45 → "123.45"
-//   - If the integer part exceeds 14 digits, use exponential notation.
-//     ex) 123456789123456.40 → "1.2345678901234e+14"
-//   - If the total number of digits exceeds 14, truncate the decimal places.
-//     ex) 123.45678901234 → "123.4567890123"
-//
-// Reference :
-//   - https://github.com/php/php-src/blob/php-5.6.40/Zend/zend_operators.c#L627-L633
-func floatToString(value float64) string {
-	if math.IsNaN(value) {
-		return "NAN"
-	}
-	if math.IsInf(value, 1) {
-		return "INF"
-	}
-	if math.IsInf(value, -1) {
-		return "-INF"
-	}
-	return fmt.Sprintf("%.*G", 14, value)
-}
 
 // zendParseArgAsString attempts to replicate the behavior of the 'zend_parse_arg_impl' function
 // from PHP 5.6, specifically for the case where the 'spec' parameter is "s".
 // It handles conversion of different types to string in a way that aligns with PHP's type juggling rules.
+//
+// This function returns error if given argument is not one of following:
+// string, int, int8, int16, int32, int64, float32, float64, bool, nil
+// and any type which does not implement interface { toString() string }.
 //
 // Reference :
 //   - https://github.com/php/php-src/blob/php-5.6.40/Zend/zend_API.c#L685-L713

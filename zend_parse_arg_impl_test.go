@@ -3,28 +3,11 @@ package gophplib
 import (
 	"fmt"
 	"math"
-	"os"
 	"reflect"
 	"testing"
 )
 
-type Sample struct{}
-
-type Sample2 struct{}
-
-type CustomType struct {
-	value string
-}
-
-func (s Sample) toString() string {
-	return "sample object"
-}
-
 func TestZendParseArgAsString(t *testing.T) {
-	file, osErr := os.Open("README.md")
-	if osErr != nil {
-		panic(osErr)
-	}
 
 	testCase := []struct {
 		any
@@ -53,7 +36,7 @@ func TestZendParseArgAsString(t *testing.T) {
 		{[]int{1, 2, 3}, ""},
 		{[]string{"hello", "world"}, ""},
 		{[]interface{}{[]interface{}{1, 2}, []interface{}{"a", "b"}}, ""},
-		{file, ""},
+		{getFile(), ""},
 		{CustomType{"Hello world"}, ""},
 	}
 	for _, tc := range testCase {
