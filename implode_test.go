@@ -158,6 +158,9 @@ func ExampleImplode_error() {
 }
 
 func TestImplode(t *testing.T) {
+	om := orderedmap.NewOrderedMap[any, any]()
+	om.Set("key1", "value1")
+	om.Set("key2", "value2")
 	testCases := []struct {
 		arg1 any
 		arg2 any
@@ -189,6 +192,8 @@ func TestImplode(t *testing.T) {
 		{nil, "abcd", ""},
 		{", ", []any{Cat{"nabi", 3}}, "name is nabi and 3 years old"},
 		{", ", map[string]string{"foo": "bar"}, "bar"},
+		{", ", om, "value1, value2"},
+		{", ", *om, "value1, value2"},
 	}
 
 	for _, tc := range testCases {
@@ -326,6 +331,23 @@ func BenchmarkImplode(b *testing.B) {
 				} else {
 					_, _ = Implode(tc.arg1, arg2Any...)
 				}
+			}
+		})
+	}
+}
+
+func TestIsOrderedMap(t *testing.T) {
+	testCases := []struct {
+		any
+	}{
+		{orderedmap.NewOrderedMap[any, any]()},
+		{*orderedmap.NewOrderedMap[any, any]()},
+	}
+	for _, tc := range testCases {
+		testName := fmt.Sprintf("%v", reflect.TypeOf(tc.any).Kind())
+		t.Run(testName, func(t *testing.T) {
+			if !isOrderedMap(tc.any) {
+				t.Errorf("expected result was true but got false")
 			}
 		})
 	}
