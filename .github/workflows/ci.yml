@@ -19,5 +19,6 @@ jobs:
       - uses: dominikh/staticcheck-action@v1
         with:
           version: 2023.1.6
+          install-go: false
       - if: success() && github.ref == 'refs/heads/main'
         uses: ncruces/go-coverage-report@v0
