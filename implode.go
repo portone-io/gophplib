@@ -58,7 +58,7 @@ func Implode(arg1 any, options ...any) (string, error) {
 		if !isArg1CollectionType {
 			return "", fmt.Errorf("argument must be one of array, slice, or ordered map, but got %v", reflect.TypeOf(arg1))
 		}
-		aggregateValues(arg1, &arr)
+		arr = aggregateValues(arg1)
 	} else {
 		arg2 := options[0]
 		// Check arg2 is one of array, slice, or ordered map
@@ -66,10 +66,10 @@ func Implode(arg1 any, options ...any) (string, error) {
 
 		if isArg1CollectionType {
 			delim, _ = ConvertToString(arg2)
-			aggregateValues(arg1, &arr)
+			arr = aggregateValues(arg1)
 		} else if !isArg1CollectionType && isArg2CollectionType {
 			delim, _ = ConvertToString(arg1)
-			aggregateValues(arg2, &arr)
+			arr = aggregateValues(arg2)
 		} else {
 			return "", fmt.Errorf("invalid arguments passed, got %v, %v", reflect.TypeOf(arg1), reflect.TypeOf(arg2))
 		}
@@ -97,8 +97,12 @@ func Implode(arg1 any, options ...any) (string, error) {
 
 // isOrderedMap checks if the argument is an instance of ordered map
 func isOrderedMap(arg any) bool {
-	_, ok := arg.(*orderedmap.OrderedMap[any, any])
-	return ok
+	switch arg.(type) {
+	case orderedmap.OrderedMap[any, any], *orderedmap.OrderedMap[any, any]:
+		return true
+	default:
+		return false
+	}
 }
 
 // isCollectionType checks if the argument is either an array, a slice, a map or ordered map
@@ -113,22 +117,37 @@ func isCollectionType(arg any) bool {
 
 // aggregateValues extracts the stored value from different types of source:
 // ordered map, map, slice and array. It gathers there values into an arr and returns it.
-func aggregateValues(source any, arr *[]any) {
+func aggregateValues(source any) []any {
 	if isOrderedMap(source) {
-		om, _ := source.(*orderedmap.OrderedMap[any, any])
-		for el := om.Front(); el != nil; el = el.Next() {
-			*arr = append(*arr, el.Value)
+		var om *orderedmap.OrderedMap[any, any]
+
+		switch tmp := source.(type) {
+		case orderedmap.OrderedMap[any, any]:
+			// If source is an OrderedMap struct, use address of source
+			om = &tmp
+		case *orderedmap.OrderedMap[any, any]:
+			om = tmp
 		}
+
+		arr := make([]any, 0, om.Len())
+		for el := om.Front(); el != nil; el = el.Next() {
+			arr = append(arr, el.Value)
+		}
+		return arr
 	} else {
 		v := reflect.ValueOf(source)
-		if v.Kind() == reflect.Map {
+		arr := make([]any, 0, v.Len())
+
+		switch v.Kind() {
+		case reflect.Map:
 			for _, value := range v.MapKeys() {
-				*arr = append(*arr, v.MapIndex(value).Interface())
+				arr = append(arr, v.MapIndex(value).Interface())
 			}
-		} else if v.Kind() == reflect.Slice || v.Kind() == reflect.Array {
+		case reflect.Slice, reflect.Array:
 			for i := 0; i < v.Len(); i++ {
-				*arr = append(*arr, v.Index(i).Interface())
+				arr = append(arr, v.Index(i).Interface())
 			}
 		}
+		return arr
 	}
 }
