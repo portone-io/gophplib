@@ -4,13 +4,16 @@ import (
 	"bytes"
 	"strconv"
 	"strings"
+
+	"github.com/elliotchance/orderedmap/v2"
 )
 
 // ParseStr is a ported function that works exactly the same as PHP's parse_str
 // function. For more information, see the [official PHP documentation].
 //
-// All keys of the returned map are either string or int. Type of all values of
-// the returned map (RetVal) are either string or "map[string | int]RetVal".
+// All keys of the returned orderedmap.OrderedMap are either string or int. Type of all values of
+// the returned orderedmap.OrderedMap are either string or "orderedmap.OrderedMap[string | int]RetVal".
+// For more information about orderedmap libaray, see the [orderedmap documentation].
 //
 // Reference:
 //   - https://www.php.net/manual/en/function.parse-str.php
@@ -18,8 +21,9 @@ import (
 //   - https://github.com/php/php-src/blob/php-8.3.0/main/php_variables.c#L523-L568
 //
 // [official PHP documentation]: https://www.php.net/manual/en/function.parse-str.php
-func ParseStr(input string) map[any]any {
-	ret := newPhpArray()
+// [orderedmap documentation]: https://pkg.go.dev/github.com/elliotchance/orderedmap/v2@v2.2.0
+func ParseStr(input string) orderedmap.OrderedMap[any, any] {
+	ret := newPHPArray()
 
 	// Split input with '&'
 	pairs := strings.Split(input, "&")
@@ -34,7 +38,6 @@ func ParseStr(input string) map[any]any {
 		key, value, _ := strings.Cut(pair, "=")
 		registerVariableSafe(Urldecode(key), Urldecode(value), ret)
 	}
-
 	return ret.intoMap()
 }
 
@@ -46,7 +49,7 @@ func ParseStr(input string) map[any]any {
 //   - https://github.com/php/php-src/blob/php-8.3.0/main/php_variables.c#L90-L314
 func registerVariableSafe(key, value string, track *phpSymtable) {
 	// NOTE: key is "var_name", value is "val", track is "track_vars_array" in
-	// below PHP verion's function signature.
+	// below PHP version's function signature.
 	//
 	// PHPAPI void php_register_variable_ex(const char *var_name, zval *val, zval *track_vars_array)
 
@@ -107,12 +110,12 @@ func registerVariableSafe(key, value string, track *phpSymtable) {
 
 			var subdict *phpSymtable
 			if index == nil {
-				subdict = newPhpArray()
+				subdict = newPHPArray()
 				track.setNext(subdict)
 			} else {
 				value, ok := track.get(index)
 				if !ok {
-					subdict = newPhpArray()
+					subdict = newPHPArray()
 					track.set(index, subdict)
 				} else {
 					// References for origianl PHP codes of here:
@@ -120,7 +123,7 @@ func registerVariableSafe(key, value string, track *phpSymtable) {
 					//   - https://www.phpinternalsbook.com/php7/zvals/basic_structure.html
 					underlying, ok := value.(*phpSymtable)
 					if !ok {
-						subdict = newPhpArray()
+						subdict = newPHPArray()
 						track.set(index, subdict)
 					} else {
 						subdict = underlying
@@ -150,32 +153,34 @@ plain_var:
 	}
 }
 
-// phpSymtable is a map[any]any which behaves like PHP's array. It maintains
+// phpSymtable is a orderedmap.OrderedMap[any, any] which behaves like PHP's array. It maintains
 // internal next (i.e. nNextFreeElement of PHP) state and it automatically
 // converts numeric string keys to integer keys.
 type phpSymtable struct {
 	next int
 	// Key is either string or int.
 	// Value is either string or *phpSymtable.
-	d map[any]any
+	d orderedmap.OrderedMap[any, any]
 }
 
-func newPhpArray() *phpSymtable {
+func newPHPArray() *phpSymtable {
 	return &phpSymtable{
 		next: 0,
-		d:    make(map[any]any),
+		d:    *orderedmap.NewOrderedMap[any, any](),
 	}
 }
 
-// It returns a map[any]any whose keys are either string or int, and whose
-// values (RetVal) are either string or "map[string | int]RetVal".
-func (p *phpSymtable) intoMap() map[any]any {
-	ret := make(map[any]any)
-	for k, v := range p.d {
-		if sub, ok := v.(*phpSymtable); ok {
-			ret[k] = sub.intoMap()
+// It returns an orderedmap.OrderedMap[any, any] whose keys are either string or int, and whose
+// values (RetVal) are either string or "orderedmap.OrderedMap[string | int, RetVal]".
+func (p *phpSymtable) intoMap() orderedmap.OrderedMap[any, any] {
+	ret := *orderedmap.NewOrderedMap[any, any]()
+	for el := p.d.Front(); el != nil; el = el.Next() {
+		key := el.Key
+		value := el.Value
+		if sub, ok := el.Value.(*phpSymtable); ok {
+			ret.Set(key, sub.intoMap())
 		} else {
-			ret[k] = v
+			ret.Set(key, value)
 		}
 	}
 	return ret
@@ -183,7 +188,7 @@ func (p *phpSymtable) intoMap() map[any]any {
 
 func (p *phpSymtable) get(key []byte) (any, bool) {
 	k := phpNumericOrString(key)
-	v, ok := p.d[k]
+	v, ok := p.d.Get(k)
 	return v, ok
 }
 
@@ -192,11 +197,11 @@ func (p *phpSymtable) set(key []byte, value any) {
 	if numeric, ok := k.(int); ok {
 		p.next = maxInt(p.next, numeric+1)
 	}
-	p.d[k] = value
+	p.d.Set(k, value)
 }
 
 func (p *phpSymtable) setNext(value any) {
-	p.d[p.next] = value
+	p.d.Set(p.next, value)
 	p.next++
 }
 
@@ -223,8 +228,8 @@ func phpNumericOrString(input []byte) any {
 // zendHandleNumericStr is a ported function that works exactly the same as
 // PHP's _zend_handle_numeric_str function.
 //
-// It returns true if the input string meets all of the following conditions:
-//   - It is an signed integer string without leading zeros. (positive sign is
+// It returns true if the input string meets all the following conditions:
+//   - It is a signed integer string without leading zeros. (positive sign is
 //     not allowed, only negative sign is allowed)
 //   - It is not a negative zero.
 //
