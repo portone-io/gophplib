@@ -1,4 +1,4 @@
-module github.com/portone-io/gophplib
+module github.com/portone-io/gophplib/v2
 
 go 1.20
 
