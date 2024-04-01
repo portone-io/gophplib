@@ -96,6 +96,7 @@ func ConvertToString(value any) (string, error) {
 		if result, ok := value.(toStringAble); ok {
 			return result.toString(), nil
 		}
+		return "Object", nil
 	}
 	// return an error for unsupported types.
 	return "", fmt.Errorf("unsupported type : %T", value)
