@@ -144,9 +144,6 @@ func ExampleImplode_error() {
 	// Arg1 is nil
 	fmt.Println(Implode(nil, "abcd"))
 
-	// Arg2 is an object array that can't convert to a string
-	fmt.Println(Implode("foo", []any{Dog{"choco", 5}, Cat{"nabi", 3}}))
-
 	// Output:
 	//  invalid arguments passed, got string, *os.File
 	//  argument must be one of array, slice, or ordered map, but got string
@@ -154,7 +151,6 @@ func ExampleImplode_error() {
 	//  invalid arguments passed, got string, <nil>
 	//  invalid arguments passed, got int, string
 	//  invalid arguments passed, got <nil>, string
-	//  unsupported type in array : gophplib.Dog
 }
 
 func TestImplode(t *testing.T) {
@@ -194,6 +190,7 @@ func TestImplode(t *testing.T) {
 		{", ", map[string]string{"foo": "bar"}, "bar"},
 		{", ", om, "value1, value2"},
 		{", ", *om, "value1, value2"},
+		{", ", []any{Dog{"choco", 5}, Cat{"nabi", 3}}, "Object, name is nabi and 3 years old"},
 	}
 
 	for _, tc := range testCases {
@@ -238,7 +235,7 @@ func TestImplode(t *testing.T) {
 	typeErrCase := struct {
 		arg1 any
 		arg2 any
-	}{"foo", []any{Dog{"choco", 5}, Cat{"nabi", 3}}}
+	}{"foo", []any{1 + 2i, Cat{"nabi", 3}}}
 
 	testName := fmt.Sprintf("%v", typeErrCase)
 	t.Run(testName, func(t *testing.T) {
