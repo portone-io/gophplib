@@ -77,7 +77,7 @@ func ExampleConvertToString() {
 	// Array <nil>
 	// Array <nil>
 	// name is nabi and 3 years old <nil>
-	//  unsupported type : gophplib.Dog
+	// Object <nil>
 }
 
 func TestConvertToString(t *testing.T) {
@@ -146,6 +146,10 @@ func TestConvertToString(t *testing.T) {
 			Cat{name: "nabi", age: 3},
 			"name is nabi and 3 years old",
 		},
+		{
+			Dog{name: "choco", age: 5},
+			"Object",
+		},
 	}
 
 	for _, tc := range testCase {
@@ -164,7 +168,7 @@ func TestConvertToString(t *testing.T) {
 
 	// Failing cases
 	errorCase := []any{
-		Dog{name: "choco", age: 5},
+		1 + 2i,
 	}
 
 	for _, tc := range errorCase {
