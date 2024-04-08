@@ -3,6 +3,7 @@ package gophplib
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/elliotchance/orderedmap/v2"
@@ -22,6 +23,39 @@ func convertOrderedMapToMap(omap orderedmap.OrderedMap[any, any]) dict {
 		}
 	}
 	return comparison
+}
+
+func dumpOrderedMap(omap orderedmap.OrderedMap[any, any]) string {
+	if omap.Len() <= 0 {
+		return "omap[]"
+	}
+
+	builder := strings.Builder{}
+	builder.WriteString("omap")
+
+	first := true
+
+	for el := omap.Front(); el != nil; el = el.Next() {
+		if first {
+			builder.WriteRune('[')
+			first = false
+		} else {
+			builder.WriteRune(' ')
+		}
+
+		builder.WriteString(fmt.Sprint(el.Key))
+		builder.WriteString(":")
+
+		switch v := el.Value.(type) {
+		case orderedmap.OrderedMap[any, any]:
+			builder.WriteString(dumpOrderedMap(v))
+		default:
+			builder.WriteString(fmt.Sprint(el.Value))
+		}
+	}
+
+	builder.WriteRune(']')
+	return builder.String()
 }
 
 // Basic test cases
