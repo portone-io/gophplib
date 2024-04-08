@@ -9,8 +9,6 @@ import (
 	"github.com/elliotchance/orderedmap/v2"
 )
 
-type dict map[any]any
-
 func dumpOrderedMap(omap orderedmap.OrderedMap[any, any]) string {
 	if omap.Len() <= 0 {
 		return "omap[]"
