@@ -11,20 +11,6 @@ import (
 
 type dict map[any]any
 
-func convertOrderedMapToMap(omap orderedmap.OrderedMap[any, any]) dict {
-	// Convert OrderedMap to map
-	comparison := make(dict, omap.Len())
-	for el := omap.Front(); el != nil; el = el.Next() {
-		switch v := el.Value.(type) {
-		case orderedmap.OrderedMap[any, any]:
-			comparison[el.Key] = convertOrderedMapToMap(v)
-		default:
-			comparison[el.Key] = el.Value
-		}
-	}
-	return comparison
-}
-
 func dumpOrderedMap(omap orderedmap.OrderedMap[any, any]) string {
 	if omap.Len() <= 0 {
 		return "omap[]"
@@ -56,6 +42,24 @@ func dumpOrderedMap(omap orderedmap.OrderedMap[any, any]) string {
 
 	builder.WriteRune(']')
 	return builder.String()
+}
+
+func omap(args ...any) orderedmap.OrderedMap[any, any] {
+	omap := *orderedmap.NewOrderedMap[any, any]()
+
+	var lastkey any
+	lastkey = nil
+
+	for _, v := range args {
+		if lastkey == nil {
+			lastkey = v
+		} else {
+			omap.Set(lastkey, v)
+			lastkey = nil
+		}
+	}
+
+	return omap
 }
 
 // Basic test cases
@@ -186,347 +190,348 @@ func TestParseStr(t *testing.T) {
 	testCases := []struct {
 		name     string
 		input    string
-		expected dict
+		expected orderedmap.OrderedMap[any, any]
 	}{
 		{
 			name:  "BasicTest",
 			input: "A=aaa&B=bbb&C=ccc",
-			expected: dict{
-				"A": "aaa",
-				"B": "bbb",
-				"C": "ccc",
-			},
+			expected: omap(
+				"A", "aaa",
+				"B", "bbb",
+				"C", "ccc",
+			),
 		},
 		{
 			name:  "ArrayValues",
 			input: "A=aaa&a[]=111&a[]=true&b[]=bbb&c[]=1.414&a[]=3.14",
-			expected: dict{
-				"A": "aaa",
-				"a": dict{0: "111", 1: "true", 2: "3.14"},
-				"b": dict{0: "bbb"},
-				"c": dict{0: "1.414"},
-			},
+			expected: omap(
+				"A", "aaa",
+				"a", omap(0, "111", 1, "true", 2, "3.14"),
+				"b", omap(0, "bbb"),
+				"c", omap(0, "1.414"),
+			),
 		},
 		{
 			name:  "EncodedData",
 			input: "a=%3c%3d%3d%20%20url+encoded++%3d%3d%3e&b=%23%23%23Url+Encoded%23%23%23",
-			expected: dict{
-				"a": "<==  url encoded  ==>",
-				"b": "###Url Encoded###",
-			},
+			expected: omap(
+				"a", "<==  url encoded  ==>",
+				"b", "###Url Encoded###",
+			),
 		},
 		{
 			name:  "SingleQuotes",
 			input: "firstname=Conan&surname=O%27Brien",
-			expected: dict{
-				"firstname": "Conan",
-				"surname":   "O'Brien",
-			},
+			expected: omap(
+				"firstname", "Conan",
+				"surname", "O'Brien",
+			),
 		},
 		{
 			name:  "BackSlash",
 			input: "sum=8%5c2%3d4",
-			expected: dict{
-				"sum": `8\2=4`,
-			},
+			expected: omap(
+				"sum", `8\2=4`,
+			),
 		},
 		{
 			name:  "DoubleQuotes",
 			input: "str=%22quoted%22+string",
-			expected: dict{
-				"str": `"quoted" string`,
-			},
+			expected: omap(
+				"str", `"quoted" string`,
+			),
 		},
 		{
 			name:  "StringWithNulls",
 			input: "str=string%20with%20%00%00%00%20nulls",
-			expected: dict{
-				"str": "string with \x00\x00\x00 nulls",
-			},
+			expected: omap(
+				"str", "string with \x00\x00\x00 nulls",
+			),
 		},
 		{
 			name:  "StringWith2DimArrayNumericKey",
 			input: "arr[2][4]=deedee&arr[2][6]=wiz",
-			expected: dict{
-				"arr": dict{
-					2: dict{
-						4: "deedee",
-						6: "wiz",
-					},
-				},
-			},
+			expected: omap(
+				"arr", omap(
+					2, omap(
+						4, "deedee",
+						6, "wiz",
+					),
+				),
+			),
 		},
 		{
 			name:  "StringWith2DimArrayNullKey",
 			input: "arr[][]=deedee&arr[][]=wiz",
-			expected: dict{
-				"arr": dict{
-					0: dict{
-						0: "deedee",
-					},
-					1: dict{
-						0: "wiz",
-					},
-				},
-			},
+			expected: omap(
+				"arr", omap(
+					0, omap(
+						0, "deedee",
+					),
+					1, omap(
+						0, "wiz",
+					),
+				),
+			),
 		},
 		{
 			name:  "StringWith2DimArrayNonNumericKey",
 			input: "arr[a][d]=deedee&arr[c][six]=wiz",
-			expected: dict{
-				"arr": dict{
-					"a": dict{
-						"d": "deedee",
-					},
-					"c": dict{
-						"six": "wiz",
-					},
-				},
-			},
+			expected: omap(
+				"arr", omap(
+					"a", omap(
+						"d", "deedee",
+					),
+					"c", omap(
+						"six", "wiz",
+					),
+				),
+			),
 		},
 		{
 			name:  "StringWith2DimArrayPartialEmptyKey",
 			input: "arr[2][]=deedee&arr[2][]=wiz",
-			expected: dict{
-				"arr": dict{
-					2: dict{
-						0: "deedee",
-						1: "wiz",
-					},
-				},
-			},
+			expected: omap(
+				"arr", omap(
+					2, omap(
+						0, "deedee",
+						1, "wiz",
+					),
+				),
+			),
 		},
 		{
 			name:  "StringWith2DimArrayPartialEmptyKey2",
 			input: "arr[2][]=deedee&arr[4][]=wiz",
-			expected: dict{
-				"arr": dict{
-					2: dict{
-						0: "deedee",
-					},
-					4: dict{
-						0: "wiz",
-					},
-				},
-			},
+			expected: omap(
+				"arr", omap(
+					2, omap(
+						0, "deedee",
+					),
+					4, omap(
+						0, "wiz",
+					),
+				),
+			),
 		},
 		{
 			name:  "StringWith2DimArrayPartialEmptyKey3",
 			input: "arr[2][]=deedee&arr[][4]=wiz",
-			expected: dict{
-				"arr": dict{
-					2: dict{
-						0: "deedee",
-					},
-					3: dict{
-						4: "wiz",
-					},
-				},
-			},
+			expected: omap(
+				"arr", omap(
+					2, omap(
+						0, "deedee",
+					),
+					3, omap(
+						4, "wiz",
+					),
+				),
+			),
 		},
 		{
 			name:  "StringWith2DimArrayPartialEmptyKey4",
 			input: "arr[2][]=deedee&arr[][]=wiz",
-			expected: dict{
-				"arr": dict{
-					2: dict{
-						0: "deedee",
-					},
-					3: dict{
-						0: "wiz",
-					},
-				},
-			},
+			expected: omap(
+				"arr", omap(
+					2, omap(
+						0, "deedee",
+					),
+					3, omap(
+						0, "wiz",
+					),
+				),
+			),
 		},
 		{
 			name:  "StringWith3DimArrayNumericKey",
 			input: "arr[1][2][3]=deedee&arr[1][2][10]=wiz",
-			expected: dict{
-				"arr": dict{
-					1: dict{
-						2: dict{
-							3:  "deedee",
-							10: "wiz",
-						},
-					},
-				},
-			},
+			expected: omap(
+				"arr", omap(
+					1, omap(
+						2, omap(
+							3, "deedee",
+							10, "wiz",
+						),
+					),
+				),
+			),
 		}, {
 			name:  "StringWithNumericalArrayKeys",
 			input: "arr[1]=deedee&arr[4]=sonny",
-			expected: dict{
-				"arr": dict{
-					1: "deedee",
-					4: "sonny",
-				},
-			},
+			expected: omap(
+				"arr", omap(
+					1, "deedee",
+					4, "sonny",
+				),
+			),
 		},
 		{
 			name:  "StringWithAssociativeKeys",
 			input: "arr[A]=deedee&arr[D]=sonny",
-			expected: dict{
-				"arr": dict{
-					"A": "deedee",
-					"D": "sonny",
-				},
-			},
+			expected: omap(
+				"arr", omap(
+					"A", "deedee",
+					"D", "sonny",
+				),
+			),
 		},
 		{
 			name:  "BadlyFormedStrings0",
 			input: "arr[1=deedee",
-			expected: dict{
-				"arr_1": "deedee",
-			},
+			expected: omap(
+				"arr_1", "deedee",
+			),
 		},
 		{
 			name:  "BadlyFormedStrings1",
 			input: "arr[1=deedee&arr[3][2=wiz",
-			expected: dict{
-				"arr_1": "deedee",
-				"arr": dict{
-					3: "wiz",
-				},
-			},
+			expected: omap(
+				"arr_1", "deedee",
+				"arr", omap(
+					3, "wiz",
+				),
+			),
 		},
 		{
 			name:  "BadlyFormedStrings2",
 			input: "arr1]=deedee&arr[3]2]=wiz",
-			expected: dict{
-				"arr1]": "deedee",
-				"arr": dict{
-					3: "wiz",
-				},
-			},
+			expected: omap(
+				"arr1]", "deedee",
+				"arr", omap(
+					3, "wiz",
+				),
+			),
 		},
 		{
 			name:  "BadlyFormedStrings3",
 			input: "arr[a=deedee&arr[4][b=wiz",
-			expected: dict{
-				"arr_a": "deedee",
-				"arr": dict{
-					4: "wiz",
-				},
-			},
+			expected: omap(
+				"arr_a", "deedee",
+				"arr", omap(
+					4, "wiz",
+				),
+			),
 		},
 		{
 			name:  "EncodedNumbers",
 			input: "A=%41&B=%a&C=%b",
-			expected: dict{
-				"A": "A",
-				"B": "%a",
-				"C": "%b",
-			},
+			expected: omap(
+				"A", "A",
+				"B", "%a",
+				"C", "%b",
+			),
 		},
 		{
 			name:  "NonBinarySafeName",
 			input: "arr.test[1]=deedee&arr test[4][b]=wiz",
-			expected: dict{
-				"arr_test": dict{
-					1: "deedee",
-					4: dict{
-						"b": "wiz",
-					},
-				},
-			},
+			expected: omap(
+				"arr_test", omap(
+					1, "deedee",
+					4, omap(
+						"b", "wiz",
+					),
+				),
+			),
 		},
 		{
 			name:  "ComplexString",
 			input: "A=value&arr[]=foo+bar&arr[]=baz&foo[bar]=foobar&test.field=testing",
-			expected: dict{
-				"A":          "value",
-				"arr":        dict{0: "foo bar", 1: "baz"},
-				"foo":        dict{"bar": "foobar"},
-				"test_field": "testing",
-			},
+			expected: omap(
+				"A", "value",
+				"arr", omap(0, "foo bar", 1, "baz"),
+				"foo", omap("bar", "foobar"),
+				"test_field", "testing",
+			),
 		},
 		{
 			name:  "MixMultipleType",
 			input: "arr[]=A&arr[]=B&arr[9]=C&arr[]=D&arr[foo]=E&arr[]=F&arr[15.1]=G&arr[]=H",
-			expected: dict{
-				"arr": dict{
-					0:      "A",
-					1:      "B",
-					9:      "C",
-					10:     "D",
-					"foo":  "E",
-					11:     "F",
-					"15.1": "G",
-					12:     "H",
-				},
-			},
+			expected: omap(
+				"arr", omap(
+					0, "A",
+					1, "B",
+					9, "C",
+					10, "D",
+					"foo", "E",
+					11, "F",
+					"15.1", "G",
+					12, "H",
+				),
+			),
 		},
 		{
 			name:  "IllInputString",
 			input: "yo;lo&foo = bar%ZZ&yolo + = + swag",
-			expected: dict{
-				"yo;lo":   "",
-				"foo_":    " bar%ZZ",
-				"yolo___": "   swag",
-			},
+			expected: omap(
+				"yo;lo", "",
+				"foo_", " bar%ZZ",
+				"yolo___", "   swag",
+			),
 		},
 		{
 			name:  "MixKeyType",
 			input: "2=222&3.14=3.14&arr[123]=asdf&arr[3.14]=asdf",
-			expected: dict{
-				2:      "222",
-				"3_14": "3.14",
-				"arr": dict{
-					123:    "asdf",
-					"3.14": "asdf",
-				},
-			},
+			expected: omap(
+				2, "222",
+				"3_14", "3.14",
+				"arr", omap(
+					123, "asdf",
+					"3.14", "asdf",
+				),
+			),
 		},
 		{
 			name:     "EmptyInput",
 			input:    "",
-			expected: dict{},
+			expected: omap(),
 		},
 		{
 			name:     "NoName",
 			input:    "=123&[]=123&[foo]=123&[3][var]=123",
-			expected: dict{},
+			expected: omap(),
 		},
 		{
 			name:     "NoValue",
 			input:    "foo&arr[]&arr[]&arr[]=val",
-			expected: dict{"foo": "", "arr": dict{0: "", 1: "", 2: "val"}},
+			expected: omap("foo", "", "arr", omap(0, "", 1, "", 2, "val")),
 		},
 		{
 			name:     "ReadingZero",
 			input:    "foo[03]=yo",
-			expected: dict{"foo": dict{"03": "yo"}},
+			expected: omap("foo", omap("03", "yo")),
 		},
 		{
 			name:     "Negative",
 			input:    "foo[-3]=yo",
-			expected: dict{"foo": dict{-3: "yo"}},
+			expected: omap("foo", omap(-3, "yo")),
 		},
 		{
 			name:     "LeadingWhitespaces",
 			input:    "   foo=bar",
-			expected: dict{"foo": "bar"},
+			expected: omap("foo", "bar"),
 		},
 		{
 			name:     "ArrayThenString",
 			input:    "foo[]=x&foo[]=y&foo=bar",
-			expected: dict{"foo": "bar"},
+			expected: omap("foo", "bar"),
 		},
 		{
 			name:     "StringThenArray",
 			input:    "foo=bar&foo[]=x&foo[]=y",
-			expected: dict{"foo": dict{0: "x", 1: "y"}},
+			expected: omap("foo", omap(0, "x", 1, "y")),
 		},
 		{
 			name:     "StringHasBlanks",
 			input:    "foo[ 3=v",
-			expected: dict{"foo_ 3": "v"},
+			expected: omap("foo_ 3", "v"),
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := convertOrderedMapToMap(ParseStr(tc.input))
-			if !reflect.DeepEqual(result, tc.expected) {
+			result := dumpOrderedMap(ParseStr(tc.input))
+			expected := dumpOrderedMap(tc.expected)
+			if !reflect.DeepEqual(result, expected) {
 				t.Errorf(`
 expected  %#v
 actual    %#v`, tc.expected, result)
