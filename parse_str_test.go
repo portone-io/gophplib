@@ -61,28 +61,30 @@ func dumpOrderedMap(omap orderedmap.OrderedMap[any, any]) string {
 // Basic test cases
 func ExampleParseStr() {
 	// Plain key-value
-	fmt.Println(convertOrderedMapToMap(ParseStr("key=value&foo=bar")))
-	// map[foo:bar key:value]
+	fmt.Println(dumpOrderedMap(ParseStr("key=value&foo=bar")))
 
 	// Array will be parsed as map with integer keys
-	fmt.Println(convertOrderedMapToMap(ParseStr("arr[0]=A&arr[1]=B&arr[2]=C")))
-	// map[arr:map[0:A 1:B 2:C]]
+	fmt.Println(dumpOrderedMap(ParseStr("arr[0]=A&arr[1]=B&arr[2]=C")))
 
 	// Empty key will be treated as auto-incremented integer key for each array
-	fmt.Println(convertOrderedMapToMap(ParseStr("arr[]=A&arr[]=B&arr[]=C&another[]=A&another[]=B")))
-	// map[another:map[0:A 1:B] arr:map[0:A 1:B 2:C]]
+	fmt.Println(dumpOrderedMap(ParseStr("arr[]=A&arr[]=B&arr[]=C&another[]=A&another[]=B")))
 
 	// Dictionary
-	fmt.Println(convertOrderedMapToMap(ParseStr("dict[key]=value&dict[foo]=bar")))
-	// map[dict:map[foo:bar key:value]]
+	fmt.Println(dumpOrderedMap(ParseStr("dict[key]=value&dict[foo]=bar")))
 
 	// Nesting is allowed
-	fmt.Println(convertOrderedMapToMap(ParseStr("dict[k1][k2]=v1&dict[k1][k3]=v2")))
-	// map[dict:map[k1:map[k2:v1 k3:v2]]]
+	fmt.Println(dumpOrderedMap(ParseStr("dict[k1][k2]=v1&dict[k1][k3]=v2")))
 
 	// ParseStr will automatically urldecode the input
-	fmt.Println(convertOrderedMapToMap(ParseStr("firstname=Conan&surname=O%27Brien")))
-	// map[firstname:Conan surname:O'Brien]
+	fmt.Println(dumpOrderedMap(ParseStr("firstname=Conan&surname=O%27Brien")))
+
+	// Output:
+	// omap[key:value foo:bar]
+	// omap[arr:omap[0:A 1:B 2:C]]
+	// omap[arr:omap[0:A 1:B 2:C] another:omap[0:A 1:B]]
+	// omap[dict:omap[key:value foo:bar]]
+	// omap[dict:omap[k1:omap[k2:v1 k3:v2]]]
+	// omap[firstname:Conan surname:O'Brien]
 }
 
 // Test cases for complex arrays.
@@ -95,74 +97,78 @@ func ExampleParseStr() {
 func ExampleParseStr_complexArray() {
 	// Each empty key will be treated as auto-incremented integer key for each
 	// array
-	fmt.Println(convertOrderedMapToMap(ParseStr("key=value&a[]=123&a[]=false&b[]=str&c[]=3.5&a[]=last")))
-	// map[a:map[0:123 1:false 2:last] b:map[0:str] c:map[0:3.5] key:value]
+	fmt.Println(dumpOrderedMap(ParseStr("key=value&a[]=123&a[]=false&b[]=str&c[]=3.5&a[]=last")))
 
 	// You can mix multiple types of keys in one dictionary, and you can mix
 	// empty key with non-empty key. Each non-empty integer key will be used as
 	// a new starting number for next empty key.
-	fmt.Println(convertOrderedMapToMap(ParseStr("arr[]=A&arr[]=B&arr[9]=C&arr[]=D&arr[foo]=E&arr[]=F&arr[15.1]=G&arr[]=H")))
-	// map[arr:map[0:A 1:B 9:C 10:D foo:E 11:F 15.1:G 12:H]]
+	fmt.Println(dumpOrderedMap(ParseStr("arr[]=A&arr[]=B&arr[9]=C&arr[]=D&arr[foo]=E&arr[]=F&arr[15.1]=G&arr[]=H")))
 
 	// You can use empty key for multi-dimensional array. Refer to the following
 	// example for the exact behavior.
-	fmt.Println("2-dim array:         ", convertOrderedMapToMap(ParseStr("arr[3][4]=deedee&arr[3][6]=wiz")))
-	// 2-dim array:          map[arr:map[3:map[4:deedee 6:wiz]]]
-	fmt.Println("2-dim with empty key:", convertOrderedMapToMap(ParseStr("arr[][]=deedee&arr[][]=wiz")))
-	// 2-dim with empty key: map[arr:map[0:map[0:deedee] 1:map[0:wiz]]]
-	fmt.Println("partial empty key 1: ", convertOrderedMapToMap(ParseStr("arr[2][]=deedee&arr[2][]=wiz")))
-	// partial empty key 1:  map[arr:map[2:map[0:deedee 1:wiz]]]
-	fmt.Println("partial empty key 2: ", convertOrderedMapToMap(ParseStr("arr[2][]=deedee&arr[4][]=wiz")))
-	// partial empty key 2:  map[arr:map[2:map[0:deedee] 4:map[0:wiz]]]
-	fmt.Println("partial empty key 3: ", convertOrderedMapToMap(ParseStr("arr[2][]=deedee&arr[][4]=wiz")))
-	// partial empty key 3:  map[arr:map[2:map[0:deedee] 3:map[4:wiz]]]
-	fmt.Println("partial empty key 4: ", convertOrderedMapToMap(ParseStr("arr[2][]=deedee&arr[][]=wiz")))
-	// partial empty key 4:  map[arr:map[2:map[0:deedee] 3:map[0:wiz]]]
-	fmt.Println("2-dim dict:          ", convertOrderedMapToMap(ParseStr("arr[one][four]=deedee&arr[three][six]=wiz")))
-	// 2-dim dict:           map[arr:map[one:map[four:deedee] three:map[six:wiz]]]
-	fmt.Println("3-dim arr:           ", convertOrderedMapToMap(ParseStr("arr[1][2][3]=deedee&arr[1][2][6]=wiz")))
-	// 3-dim arr:            map[arr:map[1:map[2:map[3:deedee 6:wiz]]]]
+	fmt.Println("2-dim array:         ", dumpOrderedMap(ParseStr("arr[3][4]=deedee&arr[3][6]=wiz")))
+	fmt.Println("2-dim with empty key:", dumpOrderedMap(ParseStr("arr[][]=deedee&arr[][]=wiz")))
+	fmt.Println("partial empty key 1: ", dumpOrderedMap(ParseStr("arr[2][]=deedee&arr[2][]=wiz")))
+	fmt.Println("partial empty key 2: ", dumpOrderedMap(ParseStr("arr[2][]=deedee&arr[4][]=wiz")))
+	fmt.Println("partial empty key 3: ", dumpOrderedMap(ParseStr("arr[2][]=deedee&arr[][4]=wiz")))
+	fmt.Println("partial empty key 4: ", dumpOrderedMap(ParseStr("arr[2][]=deedee&arr[][]=wiz")))
+	fmt.Println("2-dim dict:          ", dumpOrderedMap(ParseStr("arr[one][four]=deedee&arr[three][six]=wiz")))
+	fmt.Println("3-dim arr:           ", dumpOrderedMap(ParseStr("arr[1][2][3]=deedee&arr[1][2][6]=wiz")))
+
+	// Output:
+	// omap[key:value a:omap[0:123 1:false 2:last] b:omap[0:str] c:omap[0:3.5]]
+	// omap[arr:omap[0:A 1:B 9:C 10:D foo:E 11:F 15.1:G 12:H]]
+	// 2-dim array:          omap[arr:omap[3:omap[4:deedee 6:wiz]]]
+	// 2-dim with empty key: omap[arr:omap[0:omap[0:deedee] 1:omap[0:wiz]]]
+	// partial empty key 1:  omap[arr:omap[2:omap[0:deedee 1:wiz]]]
+	// partial empty key 2:  omap[arr:omap[2:omap[0:deedee] 4:omap[0:wiz]]]
+	// partial empty key 3:  omap[arr:omap[2:omap[0:deedee] 3:omap[4:wiz]]]
+	// partial empty key 4:  omap[arr:omap[2:omap[0:deedee] 3:omap[0:wiz]]]
+	// 2-dim dict:           omap[arr:omap[one:omap[four:deedee] three:omap[six:wiz]]]
+	// 3-dim arr:            omap[arr:omap[1:omap[2:omap[3:deedee 6:wiz]]]]
 }
 
 // Notable corner cases
 func ExampleParseStr_cornerCases() {
 	// input without key name will be ignored
-	fmt.Println("empty input:", convertOrderedMapToMap(ParseStr("")))
-	// empty input: map[]
-	fmt.Println("no name:    ", convertOrderedMapToMap(ParseStr("=123&[]=123&[foo]=123&[3][var]=123")))
-	// no name:     map[]
-	fmt.Println("no value:   ", convertOrderedMapToMap(ParseStr("foo&arr[]&arr[]&arr[]=val")))
-	// no value:    map[arr:map[0: 1: 2:val] foo:]
+	fmt.Println("empty input:", dumpOrderedMap(ParseStr("")))
+	fmt.Println("no name:    ", dumpOrderedMap(ParseStr("=123&[]=123&[foo]=123&[3][var]=123")))
+	fmt.Println("no value:   ", dumpOrderedMap(ParseStr("foo&arr[]&arr[]&arr[]=val")))
 
 	// ParseStr will automatically urldecode the input
-	fmt.Println("encoded data:", convertOrderedMapToMap(ParseStr("a=%3c%3d%3d%20%20yolo+swag++%3d%3d%3e&b=%23%23%23Yolo+Swag%23%23%23")))
-	// encoded data: map[a:<==  yolo swag  ==> b:###Yolo Swag###]
-	fmt.Println("backslash:   ", convertOrderedMapToMap(ParseStr("sum=8%5c2%3d4")))
-	// backslash:    map[sum:8\2=4]
-	fmt.Println("quotes:      ", convertOrderedMapToMap(ParseStr("str=%22quoted%22+string")))
-	// quotes:       map[str:"quoted" string]
+	fmt.Println("encoded data:", dumpOrderedMap(ParseStr("a=%3c%3d%3d%20%20yolo+swag++%3d%3d%3e&b=%23%23%23Yolo+Swag%23%23%23")))
+	fmt.Println("backslash:   ", dumpOrderedMap(ParseStr("sum=8%5c2%3d4")))
+	fmt.Println("quotes:      ", dumpOrderedMap(ParseStr("str=%22quoted%22+string")))
 
 	// Ill-formed urlencoded data will be ignored and remain unescaped
-	fmt.Println("ill encoding:", convertOrderedMapToMap(ParseStr("first=%41&second=%a&third=%ZZ")))
+	fmt.Println("ill encoding:", dumpOrderedMap(ParseStr("first=%41&second=%a&third=%ZZ")))
 	// Null bytes will be parsed as "%0"
-	// ill encoding: map[first:A second:%a third:%ZZ]
 
 	// Some characters will be replaced with underscore
-	fmt.Println("non-binary safe name:", convertOrderedMapToMap(ParseStr("arr.test[1]=deedee&arr test[4][two]=wiz")))
-	// non-binary safe name: map[arr_test:map[1:deedee 4:map[two:wiz]]]
-	fmt.Println("complex string:      ", convertOrderedMapToMap(ParseStr("first=value&arr[]=foo+bar&arr[]=baz&foo[bar]=foobar&test.field=testing")))
-	// complex string:       map[arr:map[0:foo bar 1:baz] first:value foo:map[bar:foobar] test_field:testing]
-	fmt.Println("ill formed input:    ", convertOrderedMapToMap(ParseStr("yo;lo&foo = bar%ZZ&yolo + = + swag")))
-	// ill formed input:     map[foo_: bar%ZZ yo;lo: yolo___:   swag]
-	fmt.Println("ill formed key:      ", convertOrderedMapToMap(ParseStr("arr[1=deedee&arr[4][2=wiz")))
-	// ill formed key:       map[arr:map[4:wiz] arr_1:deedee]
+	fmt.Println("non-binary safe name:", dumpOrderedMap(ParseStr("arr.test[1]=deedee&arr test[4][two]=wiz")))
+	fmt.Println("complex string:      ", dumpOrderedMap(ParseStr("first=value&arr[]=foo+bar&arr[]=baz&foo[bar]=foobar&test.field=testing")))
+	fmt.Println("ill formed input:    ", dumpOrderedMap(ParseStr("yo;lo&foo = bar%ZZ&yolo + = + swag")))
+	fmt.Println("ill formed key:      ", dumpOrderedMap(ParseStr("arr[1=deedee&arr[4][2=wiz")))
+
+	// Output:
+	// empty input: omap[]
+	// no name:     omap[]
+	// no value:    omap[foo: arr:omap[0: 1: 2:val]]
+	// encoded data: omap[a:<==  yolo swag  ==> b:###Yolo Swag###]
+	// backslash:    omap[sum:8\2=4]
+	// quotes:       omap[str:"quoted" string]
+	// ill encoding: omap[first:A second:%a third:%ZZ]
+	// non-binary safe name: omap[arr_test:omap[1:deedee 4:omap[two:wiz]]]
+	// complex string:       omap[first:value arr:omap[0:foo bar 1:baz] foo:omap[bar:foobar] test_field:testing]
+	// ill formed input:     omap[yo;lo: foo_: bar%ZZ yolo___:   swag]
+	// ill formed key:       omap[arr_1:deedee arr:omap[4:wiz]]
 }
 
 func ExampleParseStr_version() {
 	// parse_str("foo[ 3=v") returns ["foo_ 3" => "v"] in PHP 5.6 and
 	// ["foo__3" => "v"] in PHP 8.3. We follows 5.6 behavior for compatibility.
-	fmt.Println(convertOrderedMapToMap(ParseStr("foo[ 3=v")))
-	// Output: map[foo_ 3:v]
+	fmt.Println(dumpOrderedMap(ParseStr("foo[ 3=v")))
+	// Output: omap[foo_ 3:v]
 }
 
 // Test cases for ParseStr. These tests were created using the following test
