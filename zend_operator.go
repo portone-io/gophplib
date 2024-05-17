@@ -13,10 +13,6 @@ type toStringAble interface {
 	toString() string
 }
 
-type Floats interface {
-	float32 | float64
-}
-
 // floatToString converts a float32 or float64 to a string based on the PHP 5.6 rules.
 //   - Allows up to a maximum of 14 digits, including both integer and decimal places.
 //   - Remove trailing zeros from the fractional part
@@ -32,7 +28,7 @@ type Floats interface {
 // is recommended for higher accuracy.
 // Reference :
 //   - https://github.com/php/php-src/blob/php-5.6.40/Zend/zend_operators.c#L627-L633
-func floatToString[T Floats](value T) string {
+func floatToString[T float32 | float64](value T) string {
 	f64 := float64(value)
 
 	if math.IsNaN(f64) {
