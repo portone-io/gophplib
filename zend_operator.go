@@ -13,7 +13,7 @@ type toStringAble interface {
 	toString() string
 }
 
-// floatToString converts a float32 or float64 to a string based on the PHP 5.6 rules.
+// floatToString converts a float64 to a string based on the PHP 5.6 rules.
 //   - Allows up to a maximum of 14 digits, including both integer and decimal places.
 //   - Remove trailing zeros from the fractional part
 //     ex) 123.4000 → "123.4"
@@ -24,13 +24,9 @@ type toStringAble interface {
 //   - If the total number of digits exceeds 14, truncate the decimal places.
 //     ex) 123.45678901234 → "123.4567890123"
 //
-// NOTE : Converting float32 to float64 may lead to precision loss, hence using float64
-// is recommended for higher accuracy.
 // Reference :
 //   - https://github.com/php/php-src/blob/php-5.6.40/Zend/zend_operators.c#L627-L633
-func floatToString[T float32 | float64](value T) string {
-	f64 := float64(value)
-
+func floatToString(f64 float64) string {
 	if math.IsNaN(f64) {
 		return "NAN"
 	}
@@ -51,6 +47,10 @@ func floatToString[T float32 | float64](value T) string {
 // This function returns error if given argument is not one of following:
 // string, int, int8, int16, int32, int64, float32, float64, bool, nil, *os.File, *net.Conn, and *sql.DB,
 // array, slice, map and any type which does not implement interface { toString() string }.
+//
+// NOTE : If the given argument's type is float32, it will be converted to float64 internally.
+// However, converting float32 to float64 may lead to precision loss.
+// Therefore, using float64 is recommended for higher accuracy.
 //
 // Reference:
 //   - _convert_to_string implementation:
@@ -75,7 +75,7 @@ func ConvertToString(value any) (string, error) {
 	case int, int8, int16, int32, int64:
 		return fmt.Sprintf("%d", v), nil
 	case float32:
-		return floatToString(v), nil
+		return floatToString(float64(v)), nil
 	case float64:
 		return floatToString(v), nil
 	// check for special types such as a pointer of file, network, database resources
